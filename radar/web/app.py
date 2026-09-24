@@ -146,7 +146,10 @@ def certificates(
     sort: str = "days_left",
     dir: str = "asc",
 ):
-    data = rows()
+    all_data = rows()
+    owners = sorted({s.owner for s, _ in all_data if s.owner})
+    issuers = sorted({r.issuer_cn for _, r in all_data if r.issuer_cn})
+    data = all_data
     data = [
         (s, r)
         for s, r in data
@@ -164,7 +167,19 @@ def certificates(
     }.get(sort, lambda x: x[1].days_left or 10**9)
     data.sort(key=key, reverse=dir == "desc")
     return templates.TemplateResponse(
-        request, "certificates.html", {"rows": data, "status": status or "", "q": q or ""}
+        request,
+        "certificates.html",
+        {
+            "rows": data,
+            "status": status or "",
+            "q": q or "",
+            "owner": owner or "",
+            "issuer": issuer or "",
+            "owners": owners,
+            "issuers": issuers,
+            "sort": sort,
+            "direction": dir,
+        },
     )
 
 

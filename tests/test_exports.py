@@ -17,4 +17,4 @@ def test_all_exports():
     assert "<table>" in export_html(sample())
     sheet = load_workbook(BytesIO(export_xlsx(sample()))).active
     assert sheet.max_row == 2
-    assert sheet.auto_filter.ref == "A1:V2"
+    assert sheet.auto_filter.ref == "A1:Y2"

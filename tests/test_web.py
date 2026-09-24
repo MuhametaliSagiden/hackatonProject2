@@ -55,3 +55,12 @@ def test_import_and_settings_use_jinja_pages():
     assert saved.status_code == 200
     assert "Настройки сохранены" in saved.text
     assert "<p>Настройки сохранены" not in saved.text
+
+
+def test_certificate_filters_include_owner_issuer_and_sort_controls():
+    client = TestClient(app)
+    response = client.get("/certificates?owner=owner@example&issuer=Example%20CA&sort=risk&dir=desc")
+    assert response.status_code == 200
+    assert 'name="owner"' in response.text
+    assert 'name="issuer"' in response.text
+    assert 'value="risk"' in response.text
