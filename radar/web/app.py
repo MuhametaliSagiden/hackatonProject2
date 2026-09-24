@@ -50,8 +50,10 @@ def dashboard():
     return "<h1>Certificate Radar</h1><nav><a href='/targets'>Цели</a> | <a href='/certificates'>Сертификаты</a> | <a href='/scans'>Сканы</a> | <a href='/settings'>Настройки</a> | <a href='/audit'>Аудит</a> | <a href='/export?format=csv'>Экспорт CSV</a></nav><p>"+"; ".join(f"{k}: {v}" for k,v in cards.items())+"</p>"
 
 @app.get("/certificates", response_class=HTMLResponse)
-def certificates(status: str | None = None, q: str | None = None):
-    data=rows(); data=[(s,r) for s,r in data if (not status or r.status==status) and (not q or q.lower() in (s.host+" "+(s.service_name or "")).lower())]
+def certificates(status: str | None = None, q: str | None = None, owner: str | None = None, issuer: str | None = None, sort: str = "days_left", dir: str = "asc"):
+    data=rows(); data=[(s,r) for s,r in data if (not status or r.status==status) and (not owner or s.owner==owner) and (not issuer or r.issuer_cn==issuer) and (not q or q.lower() in (s.host+" "+(s.service_name or "")).lower())]
+    key={"host":lambda x:x[0].host,"owner":lambda x:x[0].owner or "","issuer":lambda x:x[1].issuer_cn or "","risk":lambda x:x[1].risk_score if x[1].risk_score is not None else -1,"days_left":lambda x:x[1].days_left if x[1].days_left is not None else 10**9}.get(sort,lambda x:x[1].days_left or 10**9)
+    data.sort(key=key, reverse=dir == "desc")
     body="".join(f"<tr><td><a href='/certificates/{r.id}'>{s.host}</a></td><td>{s.owner or 'не назначен'}</td><td>{r.status}</td><td>{r.days_left if r.days_left is not None else ''}</td><td>{r.risk_score or ''}</td></tr>" for s,r in data)
     return f"<h1>Сертификаты</h1><form>Статус <input name='status'> Поиск <input name='q'><button>Фильтр</button></form><table><tr><th>Хост</th><th>Владелец</th><th>Статус</th><th>Дни</th><th>Risk</th></tr>{body}</table>"
 
@@ -104,3 +106,16 @@ def api_scans():
 @app.get("/api/certificates")
 def api_certificates(status: str | None = None):
     data=rows(); return [{"id":r.id,"host":s.host,"port":s.port,"owner":s.owner,"status":r.status,"days_left":r.days_left,"risk_score":r.risk_score,"risk_level":r.risk_level} for s,r in data if not status or r.status == status]
+
+@app.get("/api/certificates/{result_id}")
+def api_certificate(result_id: int):
+    db=session(); item=db.get(CertResult,result_id)
+    if not item: db.close(); return Response(status_code=404)
+    service=db.get(Service,item.service_id); db.close(); return {"id":item.id,"host":service.host,"port":service.port,"subject_cn":item.subject_cn,"issuer_cn":item.issuer_cn,"status":item.status,"days_left":item.days_left,"risk_score":item.risk_score,"risk_level":item.risk_level,"findings":json.loads(item.findings)}
+
+@app.post("/api/services/{service_id}")
+def update_service(service_id: int, owner: str = Form(""), criticality: str = Form("medium")):
+    if criticality not in {"high","medium","low"}: return Response(status_code=400)
+    db=session(); item=db.get(Service,service_id)
+    if not item: db.close(); return Response(status_code=404)
+    item.owner=owner or None; item.criticality=criticality; db.add(item); db.commit(); db.close(); audit("SERVICE_UPDATED", {"service_id":service_id}); return {"status":"ok"}
