@@ -123,6 +123,26 @@ def api_scans():
 def api_certificates(status: str | None = None):
     data=rows(); return [{"id":r.id,"host":s.host,"port":s.port,"owner":s.owner,"status":r.status,"days_left":r.days_left,"risk_score":r.risk_score,"risk_level":r.risk_level} for s,r in data if not status or r.status == status]
 
+@app.get("/api/dashboard")
+def api_dashboard():
+    data=rows(); statuses=["OK","Information","Warning","Critical","Expired","Unreachable"]
+    return {"total":len(data),"statuses":{status:sum(item.status == status for _,item in data) for status in statuses}}
+
+@app.get("/api/services")
+def api_services():
+    db=session(); items=list(db.exec(select(Service).order_by(Service.host))); db.close()
+    return [{"id":x.id,"host":x.host,"port":x.port,"service_name":x.service_name,"owner":x.owner,"criticality":x.criticality} for x in items]
+
+@app.get("/api/audit")
+def api_audit():
+    db=session(); items=list(db.exec(select(AuditLog).order_by(AuditLog.id.desc()).limit(500))); db.close()
+    return [{"id":x.id,"ts":x.ts,"actor":x.actor,"action":x.action,"details":json.loads(x.details)} for x in items]
+
+@app.get("/api/notifications")
+def api_notifications():
+    db=session(); items=list(db.exec(select(NotificationLog).order_by(NotificationLog.id.desc()).limit(500))); db.close()
+    return [{"id":x.id,"service_id":x.service_id,"threshold":x.threshold,"channel":x.channel,"success":x.success,"message":x.message,"sent_at":x.sent_at} for x in items]
+
 @app.get("/api/certificates/{result_id}")
 def api_certificate(result_id: int):
     db=session(); item=db.get(CertResult,result_id)
