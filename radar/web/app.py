@@ -40,6 +40,16 @@ def rows():
     result=list(db.exec(select(CertResult).where(CertResult.scan_id == latest.id))) if latest else []
     services={s.id:s for s in db.exec(select(Service))}; db.close(); return [(services[x.service_id], x) for x in result]
 
+
+def json_list(value):
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        parsed = json.loads(value)
+        return parsed if isinstance(parsed, list) else []
+    return []
+
+
 @app.post("/api/import")
 async def api_import(file: UploadFile = File(...)):
     report=import_targets(await file.read(), file.filename or "targets.txt"); return {"added":report.added,"updated":report.updated,"duplicates":report.duplicates,"invalid":report.invalid}
@@ -97,8 +107,7 @@ def certificates(request: Request, status: str | None = None, q: str | None = No
 def certificate(request: Request, result_id: int):
     db=session(); result=db.get(CertResult,result_id); service=db.get(Service,result.service_id) if result else None; db.close()
     if not result: return HTMLResponse("Не найдено", status_code=404)
-    findings=json.loads(result.findings or "[]")
-    return templates.TemplateResponse(request,"certificate.html",{"service":service,"result":result,"findings":findings,"san_dns":json.loads(result.san_dns),"san_ip":json.loads(result.san_ip)})
+    return templates.TemplateResponse(request,"certificate.html",{"service":service,"result":result,"findings":json_list(result.findings),"san_dns":json_list(result.san_dns),"san_ip":json_list(result.san_ip)})
 
 @app.get("/export")
 def export(format: str = Query("csv"), status: str | None = None, q: str | None = None, owner: str | None = None, issuer: str | None = None):
@@ -198,7 +207,7 @@ def api_notifications():
 def api_certificate(result_id: int):
     db=session(); item=db.get(CertResult,result_id)
     if not item: db.close(); return Response(status_code=404)
-    service=db.get(Service,item.service_id); db.close(); return {"id":item.id,"host":service.host,"port":service.port,"subject_cn":item.subject_cn,"issuer_cn":item.issuer_cn,"status":item.status,"days_left":item.days_left,"risk_score":item.risk_score,"risk_level":item.risk_level,"findings":json.loads(item.findings)}
+    service=db.get(Service,item.service_id); db.close(); return {"id":item.id,"host":service.host,"port":service.port,"subject_cn":item.subject_cn,"issuer_cn":item.issuer_cn,"status":item.status,"days_left":item.days_left,"risk_score":item.risk_score,"risk_level":item.risk_level,"findings":json_list(item.findings)}
 
 @app.post("/api/services/{service_id}")
 def update_service(service_id: int, owner: str = Form(""), criticality: str = Form("medium")):
