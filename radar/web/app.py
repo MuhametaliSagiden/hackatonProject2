@@ -1,22 +1,56 @@
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import HTMLResponse
+import json
+from fastapi import FastAPI, File, UploadFile, Query
+from fastapi.responses import HTMLResponse, Response
 from sqlmodel import select
-
+from ..audit import audit
 from ..db import session
-from ..models import CertResult
+from ..export.csv_export import export_csv
+from ..export.html_export import export_html
+from ..export.xlsx_export import export_xlsx
+from ..models import AuditLog, CertResult, Service
 from ..services import import_targets, run_scan
 
-app=FastAPI(title="Certificate Radar")
+app = FastAPI(title="Certificate Radar")
+
 @app.get("/health")
-def health(): return {"status":"ok"}
+def health(): return {"status": "ok"}
+
+def rows():
+    db=session(); result=list(db.exec(select(CertResult))); services={s.id:s for s in db.exec(select(Service))}; db.close(); return [(services[x.service_id], x) for x in result]
+
 @app.post("/api/import")
-async def api_import(file: UploadFile=File(...)):
-    r=import_targets(await file.read(), file.filename or "targets.txt"); return {"added":r.added,"updated":r.updated,"duplicates":r.duplicates,"invalid":r.invalid}
+async def api_import(file: UploadFile = File(...)):
+    report=import_targets(await file.read(), file.filename or "targets.txt"); return {"added":report.added,"updated":report.updated,"duplicates":report.duplicates,"invalid":report.invalid}
+
 @app.post("/api/scan")
 def api_scan():
-    s=run_scan("ui"); return {"id":s.id,"status":s.status,"processed":s.processed,"total":s.total}
+    scan=run_scan("ui"); return {"id":scan.id,"status":scan.status,"processed":scan.processed,"total":scan.total}
+
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
-    db=session(); rows=list(db.exec(select(CertResult))); db.close()
-    cards={x:sum(r.status==x for r in rows) for x in ["OK","Information","Warning","Critical","Expired","Unreachable"]}
-    return "<h1>Certificate Radar</h1><p>"+"; ".join(f"{k}: {v}" for k,v in cards.items())+"</p>"
+    data=rows(); cards={x:sum(r.status==x for _,r in data) for x in ["OK","Information","Warning","Critical","Expired","Unreachable"]}
+    return "<h1>Certificate Radar</h1><nav><a href='/certificates'>Сертификаты</a> | <a href='/export?format=csv'>Экспорт CSV</a></nav><p>"+"; ".join(f"{k}: {v}" for k,v in cards.items())+"</p>"
+
+@app.get("/certificates", response_class=HTMLResponse)
+def certificates(status: str | None = None, q: str | None = None):
+    data=rows(); data=[(s,r) for s,r in data if (not status or r.status==status) and (not q or q.lower() in (s.host+" "+(s.service_name or "")).lower())]
+    body="".join(f"<tr><td><a href='/certificates/{r.id}'>{s.host}</a></td><td>{s.owner or 'не назначен'}</td><td>{r.status}</td><td>{r.days_left if r.days_left is not None else ''}</td><td>{r.risk_score or ''}</td></tr>" for s,r in data)
+    return f"<h1>Сертификаты</h1><form>Статус <input name='status'> Поиск <input name='q'><button>Фильтр</button></form><table><tr><th>Хост</th><th>Владелец</th><th>Статус</th><th>Дни</th><th>Risk</th></tr>{body}</table>"
+
+@app.get("/certificates/{result_id}", response_class=HTMLResponse)
+def certificate(result_id: int):
+    db=session(); result=db.get(CertResult,result_id); service=db.get(Service,result.service_id) if result else None; db.close()
+    if not result: return HTMLResponse("Не найдено", status_code=404)
+    findings=json.loads(result.findings or "[]"); items="".join(f"<li>{x.get('reason') or x['code']} — {x.get('recommendation','')}</li>" for x in findings)
+    return f"<h1>{service.host}</h1><p>Статус: {result.status}; Risk: {result.risk_score or 'N/A'} ({result.risk_level})</p><p>CN: {result.subject_cn or ''}; Issuer: {result.issuer_cn or ''}</p><ul>{items}</ul>"
+
+@app.get("/export")
+def export(format: str = Query("csv")):
+    data=rows(); audit("EXPORT", {"format":format})
+    if format == "xlsx": return Response(export_xlsx(data), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    if format == "html": return HTMLResponse(export_html(data))
+    return Response(export_csv(data), media_type="text/csv; charset=utf-8", headers={"Content-Disposition":"attachment; filename=certificates.csv"})
+
+@app.get("/audit", response_class=HTMLResponse)
+def audit_page():
+    db=session(); logs=list(db.exec(select(AuditLog).order_by(AuditLog.id.desc()).limit(500))); db.close(); return "<h1>Аудит</h1><pre>"+"\n".join(f"{x.ts} {x.action} {x.details}" for x in logs)+"</pre>"
