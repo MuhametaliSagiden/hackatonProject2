@@ -13,6 +13,7 @@ from .targets.parser import parse_file
 from .audit import audit
 from .notify.service import notify_after_scan
 from .models import Setting
+from .checks.chain import chain_status
 
 
 def import_targets(data, filename):
@@ -38,7 +39,7 @@ def run_scan(triggered_by="cli", existing_scan_id=None):
         futures = [pool.submit(one, s) for s in services]
         for future in as_completed(futures):
             service, raw = future.result()
-            result=analyze(raw, service, thresholds); db.add(CertResult(scan_id=scan.id, service_id=service.id, reachable=raw.reachable, error=raw.error, resolved_ip=raw.resolved_ip, leaf_pem=raw.leaf_pem, subject_cn=raw.subject_cn, san_dns=json.dumps(raw.san_dns or []), san_ip=json.dumps(raw.san_ip or []), issuer_cn=raw.issuer_cn, issuer_full=raw.issuer_full, serial=raw.serial, thumbprint_sha1=raw.thumbprint_sha1, thumbprint_sha256=raw.thumbprint_sha256, not_before=raw.not_before, not_after=raw.not_after, key_type=raw.key_type, key_size=raw.key_size, sig_hash=raw.sig_hash, tls_version=raw.tls_version, chain_verify_code=raw.chain_verify_code, chain_verify_message=raw.chain_verify_message, chain_status="trusted" if raw.chain_verify_code in (0,9,10) else "self_signed" if raw.chain_verify_code == 18 else "untrusted", days_left=result["days_left"], status=result["status"], hostname_match=result.get("hostname_match"), self_signed=result.get("self_signed"), weak_crypto=result.get("weak_crypto"), risk_score=result["risk_score"], risk_level=result["risk_level"], findings=json.dumps([f.__dict__ for f in result["findings"]], ensure_ascii=False))); scan.processed += 1
+            result=analyze(raw, service, thresholds); db.add(CertResult(scan_id=scan.id, service_id=service.id, reachable=raw.reachable, error=raw.error, resolved_ip=raw.resolved_ip, leaf_pem=raw.leaf_pem, subject_cn=raw.subject_cn, san_dns=json.dumps(raw.san_dns or []), san_ip=json.dumps(raw.san_ip or []), issuer_cn=raw.issuer_cn, issuer_full=raw.issuer_full, serial=raw.serial, thumbprint_sha1=raw.thumbprint_sha1, thumbprint_sha256=raw.thumbprint_sha256, not_before=raw.not_before, not_after=raw.not_after, key_type=raw.key_type, key_size=raw.key_size, sig_hash=raw.sig_hash, tls_version=raw.tls_version, chain_verify_code=raw.chain_verify_code, chain_verify_message=raw.chain_verify_message, chain_status=chain_status(raw.chain_verify_code,result.get("self_signed",False)), days_left=result["days_left"], status=result["status"], hostname_match=result.get("hostname_match"), self_signed=result.get("self_signed"), weak_crypto=result.get("weak_crypto"), risk_score=result["risk_score"], risk_level=result["risk_level"], findings=json.dumps([f.__dict__ for f in result["findings"]], ensure_ascii=False))); scan.processed += 1
     scan.status="done"; scan.finished_at=datetime.now(UTC); db.add(scan); db.commit(); db.close(); notify_after_scan(scan.id); audit("SCAN_FINISHED", {"scan_id": scan.id, "processed": scan.processed}); return scan
 
 def recompute_latest():

@@ -2,7 +2,7 @@ import json
 from contextlib import asynccontextmanager
 from threading import Thread
 from fastapi import FastAPI, File, UploadFile, Query, Form
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import select
 from ..audit import audit
 from ..db import session
@@ -43,11 +43,17 @@ async def api_import(file: UploadFile = File(...)):
 def targets_page():
     db=session(); items=list(db.exec(select(Service).order_by(Service.host))); db.close()
     body="".join(f"<tr><td>{x.host}</td><td>{x.port}</td><td>{x.service_name or ''}</td><td>{x.owner or 'не назначен'}</td><td>{x.criticality}</td></tr>" for x in items)
-    return f"<h1>Цели</h1><form method='post' action='/targets/import'><textarea name='target_text' rows='8' cols='60' placeholder='host.example:443'></textarea><br><button>Импортировать</button></form><form method='post' action='/api/scan'><button>Запустить скан</button></form><table><tr><th>Хост</th><th>Порт</th><th>Сервис</th><th>Владелец</th><th>Критичность</th></tr>{body}</table>"
+    return f"<h1>Цели</h1><form method='post' action='/targets/upload' enctype='multipart/form-data'><input type='file' name='file' accept='.csv,.txt' required><button>Загрузить файл</button></form><form method='post' action='/targets/import'><textarea name='target_text' rows='8' cols='60' placeholder='host.example:443'></textarea><br><button>Импортировать</button></form><form method='post' action='/scans/start'><button>Запустить скан</button></form><table><tr><th>Хост</th><th>Порт</th><th>Сервис</th><th>Владелец</th><th>Критичность</th></tr>{body}</table>"
 
 @app.post("/targets/import", response_class=HTMLResponse)
 def targets_import(target_text: str = Form(...)):
     report=import_targets(target_text.encode("utf-8"), "targets.txt")
+    errors="; ".join(f"строка {x[0]}: {x[2]}" for x in report.invalid)
+    return f"<p>Добавлено: {report.added}; Обновлено: {report.updated}; Дубликаты: {report.duplicates}; Ошибки: {len(report.invalid)}</p><p>{errors}</p><a href='/targets'>Назад</a>"
+
+@app.post("/targets/upload", response_class=HTMLResponse)
+async def targets_upload(file: UploadFile = File(...)):
+    report=import_targets(await file.read(),file.filename or "targets.txt")
     errors="; ".join(f"строка {x[0]}: {x[2]}" for x in report.invalid)
     return f"<p>Добавлено: {report.added}; Обновлено: {report.updated}; Дубликаты: {report.duplicates}; Ошибки: {len(report.invalid)}</p><p>{errors}</p><a href='/targets'>Назад</a>"
 
@@ -56,6 +62,12 @@ def api_scan():
     db=session(); item=Scan(total=len(list(db.exec(select(Service)))), triggered_by="ui"); db.add(item); db.commit(); db.refresh(item); db.close()
     def worker(): run_scan("ui", item.id)
     Thread(target=worker, daemon=True).start(); return {"id":item.id,"status":"running","processed":0,"total":item.total}
+
+@app.post("/scans/start")
+def start_scan():
+    db=session(); item=Scan(total=len(list(db.exec(select(Service)))),triggered_by="ui"); db.add(item); db.commit(); db.refresh(item); db.close()
+    Thread(target=lambda:run_scan("ui",item.id),daemon=True).start()
+    return RedirectResponse(f"/scans/{item.id}",status_code=303)
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
@@ -112,8 +124,15 @@ def save_settings(info_days: int = Form(...), warning_days: int = Form(...), cri
 
 @app.get("/scans", response_class=HTMLResponse)
 def scans():
-    db=session(); items=list(db.exec(select(Scan).order_by(Scan.id.desc()))); db.close(); body="".join(f"<tr><td>{x.id}</td><td>{x.started_at}</td><td>{x.status}</td><td>{x.processed}/{x.total}</td></tr>" for x in items)
+    db=session(); items=list(db.exec(select(Scan).order_by(Scan.id.desc()))); db.close(); body="".join(f"<tr><td><a href='/scans/{x.id}'>{x.id}</a></td><td>{x.started_at}</td><td>{x.status}</td><td>{x.processed}/{x.total}</td></tr>" for x in items)
     return f"<h1>История сканов</h1><table><tr><th>ID</th><th>Начало</th><th>Статус</th><th>Обработано</th></tr>{body}</table>"
+
+@app.get("/scans/{scan_id}", response_class=HTMLResponse)
+def scan_page(scan_id: int):
+    db=session(); item=db.get(Scan,scan_id); db.close()
+    if not item: return HTMLResponse("Скан не найден",status_code=404)
+    refresh='<meta http-equiv="refresh" content="2">' if item.status == "running" else ""
+    return f"{refresh}<h1>Скан #{item.id}</h1><p>Статус: {item.status}</p><p>Обработано: {item.processed}/{item.total}</p><a href='/scans'>История</a>"
 
 @app.get("/api/scans")
 def api_scans():
