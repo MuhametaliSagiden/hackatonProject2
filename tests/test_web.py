@@ -14,4 +14,10 @@ def test_file_upload_and_missing_scan_page():
     response=client.post("/targets/upload",files={"file":("targets.csv",f"target,owner\n{host},admin@example\n","text/csv")})
     assert response.status_code == 200
     assert "Добавлено: 1" in response.text
+    item=next(x for x in client.get("/api/services").json() if x["host"] == host)
+    updated=client.post(f"/targets/{item['id']}",data={"owner":"new-owner@example","criticality":"high"},follow_redirects=False)
+    assert updated.status_code == 303
+    saved=next(x for x in client.get("/api/services").json() if x["id"] == item["id"])
+    assert saved["owner"] == "new-owner@example"
+    assert saved["criticality"] == "high"
     assert client.get("/scans/999999999").status_code == 404

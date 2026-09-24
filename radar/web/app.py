@@ -61,6 +61,15 @@ async def targets_upload(file: UploadFile = File(...)):
     errors="; ".join(f"строка {x[0]}: {x[2]}" for x in report.invalid)
     return f"<p>Добавлено: {report.added}; Обновлено: {report.updated}; Дубликаты: {report.duplicates}; Ошибки: {len(report.invalid)}</p><p>{errors}</p><a href='/targets'>Назад</a>"
 
+@app.post("/targets/{service_id}")
+def update_target(service_id: int, owner: str = Form(""), criticality: str = Form("medium")):
+    if criticality not in {"high","medium","low"}: return HTMLResponse("Некорректная критичность",status_code=400)
+    db=session(); item=db.get(Service,service_id)
+    if not item: db.close(); return HTMLResponse("Цель не найдена",status_code=404)
+    item.owner=owner.strip() or None; item.criticality=criticality; db.add(item); db.commit(); db.close()
+    audit("SERVICE_UPDATED",{"service_id":service_id,"owner":item.owner,"criticality":criticality})
+    return RedirectResponse("/targets",status_code=303)
+
 @app.post("/api/scan")
 def api_scan():
     db=session(); item=Scan(total=len(list(db.exec(select(Service)))), triggered_by="ui"); db.add(item); db.commit(); db.refresh(item); db.close()

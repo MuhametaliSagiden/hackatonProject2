@@ -31,6 +31,7 @@ def run_scan(triggered_by="cli", existing_scan_id=None):
     db=session(); services=list(db.exec(select(Service)))
     scan=db.get(Scan, existing_scan_id) if existing_scan_id else Scan(total=len(services), triggered_by=triggered_by)
     if not existing_scan_id: db.add(scan); db.commit(); db.refresh(scan)
+    audit("SCAN_STARTED",{"scan_id":scan.id,"triggered_by":triggered_by,"total":len(services)})
     cfg=load_config(); workers=cfg["scan"]["workers"]
     stored={x.key:int(x.value) for x in db.exec(select(Setting)) if x.key in {"info_days","warning_days","critical_days"}}
     thresholds={**cfg["thresholds"],**stored}
