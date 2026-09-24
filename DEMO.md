@@ -5,7 +5,7 @@
 ---
 
 ## Подготовка перед выходом к жюри (Pre-Flight Checklist)
-1. Открыть терминал в папке проекта: `cd c:\Radar\hackatonProject2-push`
+1. Открыть терминал в папке проекта: `cd c:\hackaton\hackatonProject2`
 2. Запустить лабораторный стенд TLS (в отдельном окне):
    ```powershell
    uv run python lab/serve.py
