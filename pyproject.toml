@@ -17,11 +17,22 @@ radar = "radar.cli:main"
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["radar*"]
+
 [tool.ruff]
-line-length = 100
+line-length = 110
 
 [tool.ruff.lint]
 ignore = ["BLE001", "B008", "I001"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+    "integration: marks tests as integration tests",
+]
+filterwarnings = [
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated:DeprecationWarning",
+    "ignore::starlette.exceptions.StarletteDeprecationWarning",
+]
