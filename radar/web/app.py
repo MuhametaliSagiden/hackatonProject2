@@ -14,7 +14,7 @@ from ..export.xlsx_export import export_xlsx
 from ..models import AuditLog, CertResult, Service, NotificationLog, Setting, Scan
 from ..services import import_targets, recompute_latest, run_scan_background
 from ..notify.service import send_test
-from ..scheduler import start_scheduler
+from ..scheduler import start_scheduler, update_scheduler
 from ..config import ROOT, load_config
 
 _scheduler = None
@@ -312,6 +312,7 @@ def save_settings(
     db.commit()
     db.close()
     recompute_latest()
+    update_scheduler(_scheduler, schedule_hours)
     audit(
         "SETTINGS_UPDATED",
         {
@@ -330,7 +331,7 @@ def save_settings(
         "settings.html",
         {
             "values": values,
-            "message": "Настройки сохранены и результаты пересчитаны. Новое расписание применяется после перезапуска.",
+            "message": "Настройки сохранены, результаты пересчитаны и расписание обновлено.",
         },
     )
 
