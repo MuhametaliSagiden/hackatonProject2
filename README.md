@@ -14,3 +14,17 @@ uv run radar serve
 
 Targets may be DNS names, IP addresses, `host:port`, HTTPS URLs, or CIDR ranges.
 
+## Лабораторный стенд
+
+```text
+uv run python lab/make_certs.py
+uv run python lab/serve.py
+uv run python scripts/demo_reset.py --seed
+uv run radar serve
+```
+
+Откройте `http://127.0.0.1:8000`. Лаборатория использует только локальные TLS-подключения и SNI; HTTP-запросы к целям не выполняются.
+
+## Архитектура и безопасность
+
+`radar/scanner` выполняет DNS и TLS, `analysis.py` формирует находки, `risk.py` считает риск, `notify` отправляет уведомления, `export` формирует отчёты, а `web` предоставляет UI/API. Секреты задаются через переменные окружения. Продукт работает в read-only режиме относительно целевых сервисов.
