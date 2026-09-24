@@ -1,3 +1,5 @@
-# Blockers
+# Ограничения проверки
 
-None recorded.
+- Windows Server/IIS стенд не запускался: для него нужна отдельная Windows Server VM.
+- PowerShell parser check не выполнен: `pwsh` отсутствует в текущем окружении.
+- Полный UI-прогон через настоящий браузер не выполнялся; E2E покрыт изолированным TestClient-сценарием.

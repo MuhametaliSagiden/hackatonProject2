@@ -4,6 +4,7 @@
 - Steps 2-6: packaging, exports, audit, notifications, settings, hostname/self-signed and chain analysis (24.09.2026)
 - Steps 7-17: web/API, background scans, scheduler, external notifications, launch scripts, local TLS lab and IIS setup (24.09.2026)
 - Steps 18-20: notification settings, filtered exports, E2E/API checks and demo artifacts (24.09.2026)
+- Post-release: unified check pipeline, Jinja feedback pages, isolated notification/load/E2E tests and test database isolation (24.09.2026)
 
 ## Финальный чек-лист
 
@@ -19,3 +20,6 @@
 - [x] Уведомления без дублей: console, SMTP и Telegram.
 - [x] Risk Score, владельцы, критичность, история и аудит.
 - [x] Read-only режим и модульные проверки.
+- [x] Изолированная тестовая SQLite-БД и нагрузочная проверка 256 недоступных целей.
+- [x] Сквозной изолированный E2E: импорт, скан, Dashboard, фильтр, карточка, экспорт и уведомление.
+- [ ] PowerShell parser и IIS-стенд: нужен Windows Server/pwsh; в текущем окружении `pwsh` отсутствует.
