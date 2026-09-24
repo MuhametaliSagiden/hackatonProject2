@@ -18,11 +18,25 @@ app = FastAPI(title="Certificate Radar")
 def health(): return {"status": "ok"}
 
 def rows():
-    db=session(); result=list(db.exec(select(CertResult))); services={s.id:s for s in db.exec(select(Service))}; db.close(); return [(services[x.service_id], x) for x in result]
+    db=session(); latest=db.exec(select(Scan).where(Scan.status == "done").order_by(Scan.id.desc())).first()
+    result=list(db.exec(select(CertResult).where(CertResult.scan_id == latest.id))) if latest else []
+    services={s.id:s for s in db.exec(select(Service))}; db.close(); return [(services[x.service_id], x) for x in result]
 
 @app.post("/api/import")
 async def api_import(file: UploadFile = File(...)):
     report=import_targets(await file.read(), file.filename or "targets.txt"); return {"added":report.added,"updated":report.updated,"duplicates":report.duplicates,"invalid":report.invalid}
+
+@app.get("/targets", response_class=HTMLResponse)
+def targets_page():
+    db=session(); items=list(db.exec(select(Service).order_by(Service.host))); db.close()
+    body="".join(f"<tr><td>{x.host}</td><td>{x.port}</td><td>{x.service_name or ''}</td><td>{x.owner or 'не назначен'}</td><td>{x.criticality}</td></tr>" for x in items)
+    return f"<h1>Цели</h1><form method='post' action='/targets/import'><textarea name='target_text' rows='8' cols='60' placeholder='host.example:443'></textarea><br><button>Импортировать</button></form><form method='post' action='/api/scan'><button>Запустить скан</button></form><table><tr><th>Хост</th><th>Порт</th><th>Сервис</th><th>Владелец</th><th>Критичность</th></tr>{body}</table>"
+
+@app.post("/targets/import", response_class=HTMLResponse)
+def targets_import(target_text: str = Form(...)):
+    report=import_targets(target_text.encode("utf-8"), "targets.txt")
+    errors="; ".join(f"строка {x[0]}: {x[2]}" for x in report.invalid)
+    return f"<p>Добавлено: {report.added}; Обновлено: {report.updated}; Дубликаты: {report.duplicates}; Ошибки: {len(report.invalid)}</p><p>{errors}</p><a href='/targets'>Назад</a>"
 
 @app.post("/api/scan")
 def api_scan():
@@ -33,7 +47,7 @@ def api_scan():
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
     data=rows(); cards={x:sum(r.status==x for _,r in data) for x in ["OK","Information","Warning","Critical","Expired","Unreachable"]}
-    return "<h1>Certificate Radar</h1><nav><a href='/certificates'>Сертификаты</a> | <a href='/export?format=csv'>Экспорт CSV</a></nav><p>"+"; ".join(f"{k}: {v}" for k,v in cards.items())+"</p>"
+    return "<h1>Certificate Radar</h1><nav><a href='/targets'>Цели</a> | <a href='/certificates'>Сертификаты</a> | <a href='/scans'>Сканы</a> | <a href='/settings'>Настройки</a> | <a href='/audit'>Аудит</a> | <a href='/export?format=csv'>Экспорт CSV</a></nav><p>"+"; ".join(f"{k}: {v}" for k,v in cards.items())+"</p>"
 
 @app.get("/certificates", response_class=HTMLResponse)
 def certificates(status: str | None = None, q: str | None = None):
