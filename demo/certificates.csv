@@ -1,7 +1,11 @@
 ﻿Сервис,Хост,Порт,Владелец,Статус,Дней до окончания,Risk Score
-Старый портал,expired.lab.local,8443,,Unreachable,,
-Самоподписанный,selfsigned.lab.local,8443,,Unreachable,,
-Почта OWA,expiring.lab.local,8443,petrov@lab.local,Unreachable,,
-Основной веб,valid.lab.local,8443,ivanov@lab.local,Unreachable,,
-Ошибка имени,mismatch.lab.local,8443,sidorov@lab.local,Unreachable,,
+Предупреждение,warning.lab.local,8443,warning@lab.local,Warning,19,75
+Почта OWA,expiring.lab.local,8443,petrov@lab.local,Critical,4,100
+Старый портал,expired.lab.local,8443,,Expired,-2,100
+Основной веб,valid.lab.local,8443,ivanov@lab.local,OK,364,55
+Информационный срок,information.lab.local,8443,info@lab.local,Information,49,45
+Ошибка имени,mismatch.lab.local,8443,sidorov@lab.local,OK,364,80
+Wildcard,app.wild.lab.local,8443,wildcard@lab.local,OK,364,35
+Цепочка,chain.lab.local,8443,ca@lab.local,OK,364,35
+Самоподписанный,selfsigned.lab.local,8443,,OK,364,50
 Недоступный сервис,dead.lab.local,65534,,Unreachable,,

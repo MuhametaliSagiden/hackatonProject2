@@ -1,7 +1,7 @@
 import socket, ssl
 from pathlib import Path
 
-CERTS=Path(__file__).resolve().parent/"certs"; HOSTS=["valid.lab.local","expiring.lab.local","expired.lab.local","mismatch.lab.local","selfsigned.lab.local"]
+CERTS=Path(__file__).resolve().parent/"certs"; HOSTS=["valid.lab.local","information.lab.local","warning.lab.local","expiring.lab.local","expired.lab.local","mismatch.lab.local","chain.lab.local","app.wild.lab.local","selfsigned.lab.local"]
 def context(host):
     ctx=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.load_cert_chain(CERTS/f"{host}.pem",CERTS/f"{host}.key"); return ctx
 def main(port=8443):
