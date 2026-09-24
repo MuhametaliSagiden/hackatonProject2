@@ -1,6 +1,7 @@
 import socket
 from ipaddress import ip_address
 
+
 def resolve(host, overrides=None):
     overrides = overrides or {}
     if host in overrides: return overrides[host]

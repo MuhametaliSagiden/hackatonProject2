@@ -1,5 +1,6 @@
-from radar.targets.parser import parse_text
 from radar.risk import score
+from radar.targets.parser import parse_text
+
 
 def test_parser_deduplicates_and_urls():
     report = parse_text("https://A.example:8443/x\na.example:8443\n")

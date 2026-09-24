@@ -1,10 +1,14 @@
+import hashlib
+import socket
+import ssl
 from dataclasses import dataclass
-from datetime import timezone
-import hashlib, json, socket, ssl
+
 from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
+
 from .resolver import resolve
+
 
 @dataclass
 class RawResult:

@@ -1,5 +1,6 @@
 from pathlib import Path
-from sqlmodel import SQLModel, Session, create_engine
+
+from sqlmodel import Session, SQLModel, create_engine
 
 DB_PATH = Path("data/radar.db")
 engine = create_engine(f"sqlite:///{DB_PATH.as_posix()}", connect_args={"check_same_thread": False})

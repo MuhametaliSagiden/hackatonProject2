@@ -1,6 +1,7 @@
-from dataclasses import dataclass
 from typing import Protocol
+
 from . import Finding
+
 
 class CheckContext(Protocol):
     pass

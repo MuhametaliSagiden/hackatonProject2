@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+sqlmodel
+cryptography>=42
+certifi
+httpx
+openpyxl
+pyyaml
+apscheduler<4,>=3.10
+
+[dev]
+pytest
+ruff

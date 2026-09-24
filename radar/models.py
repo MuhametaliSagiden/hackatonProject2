@@ -1,7 +1,9 @@
-from datetime import datetime, timezone
-from sqlmodel import SQLModel, Field
+from datetime import UTC, datetime
 
-def now_utc(): return datetime.now(timezone.utc)
+from sqlmodel import Field, SQLModel
+
+
+def now_utc(): return datetime.now(UTC)
 
 class Service(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

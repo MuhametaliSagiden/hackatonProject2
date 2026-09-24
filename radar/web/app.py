@@ -1,8 +1,9 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlmodel import select
+
 from ..db import session
-from ..models import Service, CertResult
+from ..models import CertResult
 from ..services import import_targets, run_scan
 
 app=FastAPI(title="Certificate Radar")

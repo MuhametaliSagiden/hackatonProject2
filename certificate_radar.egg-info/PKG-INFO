@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: certificate-radar
+Version: 0.1.0
+Requires-Python: >=3.12
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]
+Requires-Dist: jinja2
+Requires-Dist: python-multipart
+Requires-Dist: sqlmodel
+Requires-Dist: cryptography>=42
+Requires-Dist: certifi
+Requires-Dist: httpx
+Requires-Dist: openpyxl
+Requires-Dist: pyyaml
+Requires-Dist: apscheduler<4,>=3.10
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"

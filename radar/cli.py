@@ -1,6 +1,8 @@
 import argparse
+
 from .db import init_db
 from .services import import_targets, run_scan
+
 
 def main():
     parser=argparse.ArgumentParser(prog="radar"); sub=parser.add_subparsers(dest="command", required=True)

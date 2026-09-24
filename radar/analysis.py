@@ -1,9 +1,11 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from .checks import Finding
 from .risk import score
 
+
 def analyze(raw, service, settings=None, now=None):
-    now = now or datetime.now(timezone.utc); settings = settings or {"info_days":60,"warning_days":30,"critical_days":14}
+    now = now or datetime.now(UTC); settings = settings or {"info_days":60,"warning_days":30,"critical_days":14}
     if not raw.reachable: return {"status":"Unreachable","days_left":None,"findings":[Finding("UNREACHABLE", "high", f"Сервис недоступен: {raw.error}", "Проверьте доступность хоста и порта")],"risk_score":None,"risk_level":"N/A"}
     days = int((raw.not_after - now).total_seconds() // 86400)
     status = "Expired" if days < 0 else "Critical" if days <= settings.get("critical_days",14) else "Warning" if days <= settings.get("warning_days",30) else "Information" if days <= settings.get("info_days",60) else "OK"

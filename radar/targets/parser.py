@@ -1,7 +1,10 @@
+import csv
+import io
+import re
 from dataclasses import dataclass
 from ipaddress import ip_address, ip_network
 from urllib.parse import urlparse
-import csv, io, re
+
 
 @dataclass
 class ImportReport:
