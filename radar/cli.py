@@ -1,4 +1,6 @@
 import argparse
+from pathlib import Path
+
 from sqlmodel import select
 
 from .db import init_db, session
@@ -47,8 +49,7 @@ def main():
         print("База данных создана и обновлена.")
 
     elif args.command == "import":
-        with open(args.file, "rb") as f:
-            content = f.read()
+        content = Path(args.file).read_bytes()
         rep = import_targets(content, args.file)
         print(
             f"Добавлено: {rep.added}; Обновлено: {rep.updated}; Дубликаты: {rep.duplicates}; Ошибки: {len(rep.invalid)}"
