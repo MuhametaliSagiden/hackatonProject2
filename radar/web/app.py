@@ -1,8 +1,10 @@
 import json
 from contextlib import asynccontextmanager
 from threading import Thread
-from fastapi import FastAPI, File, UploadFile, Query, Form
+from fastapi import FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from sqlmodel import select
 from ..audit import audit
 from ..db import session
@@ -13,7 +15,7 @@ from ..models import AuditLog, CertResult, Service, NotificationLog, Setting, Sc
 from ..services import import_targets, run_scan, recompute_latest
 from ..notify.service import send_test
 from ..scheduler import start_scheduler
-from ..config import load_config
+from ..config import ROOT, load_config
 
 _scheduler = None
 
@@ -26,6 +28,9 @@ async def lifespan(app):
     if _scheduler: _scheduler.shutdown(wait=False); _scheduler=None
 
 app = FastAPI(title="Certificate Radar", lifespan=lifespan)
+WEB_ROOT=ROOT/"radar"/"web"
+templates=Jinja2Templates(directory=str(WEB_ROOT/"templates"))
+app.mount("/static",StaticFiles(directory=str(WEB_ROOT/"static")),name="static")
 
 @app.get("/health")
 def health(): return {"status": "ok"}
@@ -40,10 +45,9 @@ async def api_import(file: UploadFile = File(...)):
     report=import_targets(await file.read(), file.filename or "targets.txt"); return {"added":report.added,"updated":report.updated,"duplicates":report.duplicates,"invalid":report.invalid}
 
 @app.get("/targets", response_class=HTMLResponse)
-def targets_page():
+def targets_page(request: Request):
     db=session(); items=list(db.exec(select(Service).order_by(Service.host))); db.close()
-    body="".join(f"<tr><td>{x.host}</td><td>{x.port}</td><td>{x.service_name or ''}</td><td>{x.owner or 'не назначен'}</td><td>{x.criticality}</td></tr>" for x in items)
-    return f"<h1>Цели</h1><form method='post' action='/targets/upload' enctype='multipart/form-data'><input type='file' name='file' accept='.csv,.txt' required><button>Загрузить файл</button></form><form method='post' action='/targets/import'><textarea name='target_text' rows='8' cols='60' placeholder='host.example:443'></textarea><br><button>Импортировать</button></form><form method='post' action='/scans/start'><button>Запустить скан</button></form><table><tr><th>Хост</th><th>Порт</th><th>Сервис</th><th>Владелец</th><th>Критичность</th></tr>{body}</table>"
+    return templates.TemplateResponse(request,"targets.html",{"items":items})
 
 @app.post("/targets/import", response_class=HTMLResponse)
 def targets_import(target_text: str = Form(...)):
@@ -70,17 +74,17 @@ def start_scan():
     return RedirectResponse(f"/scans/{item.id}",status_code=303)
 
 @app.get("/", response_class=HTMLResponse)
-def dashboard():
+def dashboard(request: Request):
     data=rows(); cards={x:sum(r.status==x for _,r in data) for x in ["OK","Information","Warning","Critical","Expired","Unreachable"]}
-    return "<h1>Certificate Radar</h1><nav><a href='/targets'>Цели</a> | <a href='/certificates'>Сертификаты</a> | <a href='/scans'>Сканы</a> | <a href='/settings'>Настройки</a> | <a href='/audit'>Аудит</a> | <a href='/export?format=csv'>Экспорт CSV</a></nav><p>"+"; ".join(f"{k}: {v}" for k,v in cards.items())+"</p>"
+    nearest=sorted([(s,r) for s,r in data if r.days_left is not None],key=lambda x:x[1].days_left)[:10]
+    return templates.TemplateResponse(request,"dashboard.html",{"cards":cards,"nearest":nearest})
 
 @app.get("/certificates", response_class=HTMLResponse)
-def certificates(status: str | None = None, q: str | None = None, owner: str | None = None, issuer: str | None = None, sort: str = "days_left", dir: str = "asc"):
+def certificates(request: Request, status: str | None = None, q: str | None = None, owner: str | None = None, issuer: str | None = None, sort: str = "days_left", dir: str = "asc"):
     data=rows(); data=[(s,r) for s,r in data if (not status or r.status==status) and (not owner or s.owner==owner) and (not issuer or r.issuer_cn==issuer) and (not q or q.lower() in (s.host+" "+(s.service_name or "")).lower())]
     key={"host":lambda x:x[0].host,"owner":lambda x:x[0].owner or "","issuer":lambda x:x[1].issuer_cn or "","risk":lambda x:x[1].risk_score if x[1].risk_score is not None else -1,"days_left":lambda x:x[1].days_left if x[1].days_left is not None else 10**9}.get(sort,lambda x:x[1].days_left or 10**9)
     data.sort(key=key, reverse=dir == "desc")
-    body="".join(f"<tr><td><a href='/certificates/{r.id}'>{s.host}</a></td><td>{s.owner or 'не назначен'}</td><td>{r.status}</td><td>{r.days_left if r.days_left is not None else ''}</td><td>{r.risk_score or ''}</td></tr>" for s,r in data)
-    return f"<h1>Сертификаты</h1><form>Статус <input name='status'> Поиск <input name='q'><button>Фильтр</button></form><table><tr><th>Хост</th><th>Владелец</th><th>Статус</th><th>Дни</th><th>Risk</th></tr>{body}</table>"
+    return templates.TemplateResponse(request,"certificates.html",{"rows":data,"status":status or "","q":q or ""})
 
 @app.get("/certificates/{result_id}", response_class=HTMLResponse)
 def certificate(result_id: int):

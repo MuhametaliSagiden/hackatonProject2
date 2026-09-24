@@ -6,6 +6,8 @@ def test_health_and_targets_pages():
     client=TestClient(app)
     assert client.get("/health").json() == {"status":"ok"}
     assert "Цели" in client.get("/targets").text
+    assert client.get("/static/bootstrap.min.css").status_code == 200
+    assert "Обзор сертификатов" in client.get("/").text
 
 def test_file_upload_and_missing_scan_page():
     client=TestClient(app); host=f"{uuid4().hex}.example"
