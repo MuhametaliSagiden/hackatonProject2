@@ -29,8 +29,8 @@ COLUMNS = [
 
 
 def extract_row_values(service: Any, result: Any) -> list[str]:
-    san_list = result.san_dns if isinstance(result.san_dns, list) else []
-    san_ip = result.san_ip if isinstance(result.san_ip, list) else []
+    san_list = getattr(result, "san_dns", []) if isinstance(getattr(result, "san_dns", []), list) else []
+    san_ip = getattr(result, "san_ip", []) if isinstance(getattr(result, "san_ip", []), list) else []
     all_sans = san_list + san_ip
 
     not_before_str = result.not_before.strftime("%d.%m.%Y") if getattr(result, "not_before", None) else ""

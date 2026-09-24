@@ -2,7 +2,7 @@ import argparse
 from sqlmodel import select
 
 from .db import init_db, session
-from .models import CertResult, Scan, Service
+from .models import CertResult, Service
 from .services import import_targets, recompute_latest, run_scan
 
 

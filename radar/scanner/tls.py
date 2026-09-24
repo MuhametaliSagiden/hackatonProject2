@@ -88,13 +88,12 @@ def grab(
         ctx.set_ciphers("DEFAULT:@SECLEVEL=0")
         try:
             ctx.minimum_version = ssl.TLSVersion.TLSv1
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
-        with socket.create_connection((ip, port), timeout=timeout) as sock:
-            with ctx.wrap_socket(sock, server_hostname=server_hostname) as conn:
-                der = conn.getpeercert(binary_form=True)
-                version = conn.version()
+        with socket.create_connection((ip, port), timeout=timeout) as sock, ctx.wrap_socket(sock, server_hostname=server_hostname) as conn:
+            der = conn.getpeercert(binary_form=True)
+            version = conn.version()
     except Exception as exc:
         return RawResult(False, error=classify_error(exc), resolved_ip=ip)
 
@@ -117,10 +116,9 @@ def grab(
         verify.check_hostname = False
         verify.verify_mode = ssl.CERT_REQUIRED
 
-        with socket.create_connection((ip, port), timeout=timeout) as verify_sock:
-            with verify.wrap_socket(verify_sock, server_hostname=server_hostname):
-                chain_code = 0
-                chain_message = "OK"
+        with socket.create_connection((ip, port), timeout=timeout) as verify_sock, verify.wrap_socket(verify_sock, server_hostname=server_hostname):
+            chain_code = 0
+            chain_message = "OK"
     except ssl.SSLCertVerificationError as exc:
         chain_code = getattr(exc, "verify_code", 1)
         chain_message = str(exc)

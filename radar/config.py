@@ -39,7 +39,7 @@ def load_env(path: Path | None = None) -> None:
             val = val.strip().strip("'\"")
             if key:
                 os.environ[key] = val
-    except Exception:
+    except Exception:  # noqa: S110
         pass
 
 
@@ -59,7 +59,7 @@ def load_config(path: Path | None = None, override_from_db: bool = True) -> dict
     if not target.exists() and example.exists():
         try:
             shutil.copy2(example, target)
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
     if target.exists():
@@ -71,7 +71,7 @@ def load_config(path: Path | None = None, override_from_db: bool = True) -> dict
                     value[key] = {**value[key], **data}
                 else:
                     value[key] = data
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
     if override_from_db:
@@ -101,7 +101,7 @@ def load_config(path: Path | None = None, override_from_db: bool = True) -> dict
                 for k in ["email_enabled", "smtp_host", "smtp_port", "smtp_from", "email_to", "telegram_enabled"]:
                     if k in settings_map:
                         value["notify"][k] = settings_map[k]
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
     return value

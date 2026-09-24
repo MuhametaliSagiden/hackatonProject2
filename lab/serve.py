@@ -24,7 +24,7 @@ HOSTS_MAP = {
 class LabRequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         host = getattr(self.connection, "sni_hostname", "unknown")
-        body = f"Radar lab: {host}\n".encode("utf-8")
+        body = f"Radar lab: {host}\n".encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -72,7 +72,7 @@ def start_server(
         generate(c_dir)
         contexts = create_contexts(c_dir)
 
-    default_ctx = contexts.get("mismatch.lab.local") or list(contexts.values())[0]
+    default_ctx = contexts.get("mismatch.lab.local") or next(iter(contexts.values()))
 
     def sni_callback(sock, server_name, initial_context):
         name = (server_name or "").lower()

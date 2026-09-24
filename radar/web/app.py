@@ -166,7 +166,7 @@ def api_services():
 @app.get("/api/audit")
 def api_audit():
     db=session(); items=list(db.exec(select(AuditLog).order_by(AuditLog.id.desc()).limit(500))); db.close()
-    return [{"id":x.id,"ts":x.ts,"actor":x.actor,"action":x.action,"details":json.loads(x.details)} for x in items]
+    return [{"id":x.id,"ts":x.ts,"actor":x.actor,"action":x.action,"details":x.details if isinstance(x.details,dict) else json.loads(x.details)} for x in items]
 
 @app.get("/api/notifications")
 def api_notifications():

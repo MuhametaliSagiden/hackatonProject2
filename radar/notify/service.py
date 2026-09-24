@@ -108,7 +108,7 @@ def notify_after_scan(scan_id: int, thresholds: tuple[int, ...] = (60, 30, 14, 7
                         NotificationLog.thumbprint_sha1 == res.thumbprint_sha1,
                         NotificationLog.threshold == threshold,
                         NotificationLog.channel == channel_name,
-                        NotificationLog.success == True,  # noqa: E712
+                        NotificationLog.success == True,
                     )
                 ).first()
                 if existing:

@@ -7,9 +7,7 @@ def weak_key(key_type: str | None, key_size: int | None) -> bool:
         return False
     if key_type == "RSA" and key_size < 2048:
         return True
-    if key_type == "EC" and key_size < 256:
-        return True
-    return False
+    return bool(key_type == "EC" and key_size < 256)
 
 
 def weak_signature(sig_hash: str | None) -> bool:

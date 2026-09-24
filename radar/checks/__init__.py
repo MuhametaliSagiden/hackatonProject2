@@ -17,9 +17,9 @@ ALL_CHECKS: list[Check] = [
 
 __all__ = [
     "ALL_CHECKS",
+    "ChainCheck",
     "Check",
     "CheckContext",
-    "ChainCheck",
     "CryptoCheck",
     "ExpiryCheck",
     "Finding",
