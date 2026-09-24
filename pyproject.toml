@@ -1,0 +1,15 @@
+[project]
+name = "certificate-radar"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["fastapi", "uvicorn[standard]", "jinja2", "python-multipart", "sqlmodel", "cryptography>=42", "certifi", "httpx", "openpyxl", "pyyaml", "apscheduler>=3.10,<4"]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+radar = "radar.cli:main"
+
+[tool.ruff]
+line-length = 100
+

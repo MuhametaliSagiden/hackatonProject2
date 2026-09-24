@@ -1,0 +1,7 @@
+data/
+logs/
+lab/certs/
+.env
+exports/
+__pycache__/
+.pytest_cache/
