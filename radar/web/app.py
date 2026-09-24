@@ -1,6 +1,6 @@
 import json
 from contextlib import asynccontextmanager
-from threading import Thread
+
 from fastapi import FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -12,7 +12,7 @@ from ..export.csv_export import export_csv
 from ..export.html_export import export_html
 from ..export.xlsx_export import export_xlsx
 from ..models import AuditLog, CertResult, Service, NotificationLog, Setting, Scan
-from ..services import import_targets, run_scan, recompute_latest
+from ..services import import_targets, recompute_latest, run_scan_background
 from ..notify.service import send_test
 from ..scheduler import start_scheduler
 from ..config import ROOT, load_config
@@ -115,29 +115,13 @@ def update_target(service_id: int, owner: str = Form(""), criticality: str = For
 
 @app.post("/api/scan")
 def api_scan():
-    db = session()
-    item = Scan(total=len(list(db.exec(select(Service)))), triggered_by="ui")
-    db.add(item)
-    db.commit()
-    db.refresh(item)
-    db.close()
-
-    def worker():
-        run_scan("ui", item.id)
-
-    Thread(target=worker, daemon=True).start()
+    item = run_scan_background(triggered_by="ui")
     return {"id": item.id, "status": "running", "processed": 0, "total": item.total}
 
 
 @app.post("/scans/start")
 def start_scan():
-    db = session()
-    item = Scan(total=len(list(db.exec(select(Service)))), triggered_by="ui")
-    db.add(item)
-    db.commit()
-    db.refresh(item)
-    db.close()
-    Thread(target=lambda: run_scan("ui", item.id), daemon=True).start()
+    item = run_scan_background(triggered_by="ui")
     return RedirectResponse(f"/scans/{item.id}", status_code=303)
 
 

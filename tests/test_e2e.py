@@ -92,8 +92,8 @@ def test_ui_scan_dashboard_card_export_and_notification(tmp_path, monkeypatch):
         "radar.notify.service.get_active_channels", lambda config=None: {"console": Channel()}
     )
     monkeypatch.setattr(
-        "radar.web.app.run_scan",
-        lambda triggered_by, scan_id: engine_run_scan(scan_id=scan_id, triggered_by=triggered_by),
+        "radar.web.app.run_scan_background",
+        lambda triggered_by: engine_run_scan(triggered_by=triggered_by),
     )
 
     with TestClient(app) as client:
