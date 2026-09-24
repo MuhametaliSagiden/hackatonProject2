@@ -46,28 +46,58 @@
   <a href="/export?format=html&status={{ status }}&q={{ q }}&owner={{ owner }}&issuer={{ issuer }}&risk_level={{ risk_level }}&days_max={{ days_max }}">HTML</a>
 </p>
 {% set qs = 'status=' ~ status ~ '&q=' ~ q ~ '&owner=' ~ owner ~ '&issuer=' ~ issuer ~ '&risk_level=' ~ risk_level ~ '&days_max=' ~ days_max %}
-<table>
-  <tr>
-    <th><a href="/certificates?{{ qs }}&sort=service&dir={{ 'desc' if sort == 'service' and direction == 'asc' else 'asc' }}">Сервис</a></th>
-    <th><a href="/certificates?{{ qs }}&sort=host&dir={{ 'desc' if sort == 'host' and direction == 'asc' else 'asc' }}">Хост:порт</a></th>
-    <th><a href="/certificates?{{ qs }}&sort=issuer&dir={{ 'desc' if sort == 'issuer' and direction == 'asc' else 'asc' }}">Issuer</a></th>
-    <th><a href="/certificates?{{ qs }}&sort=not_after&dir={{ 'desc' if sort == 'not_after' and direction == 'asc' else 'asc' }}">Действует до</a></th>
-    <th><a href="/certificates?{{ qs }}&sort=days_left&dir={{ 'desc' if sort == 'days_left' and direction == 'asc' else 'asc' }}">Дней</a></th>
-    <th><a href="/certificates?{{ qs }}&sort=status&dir={{ 'desc' if sort == 'status' and direction == 'asc' else 'asc' }}">Статус</a></th>
-    <th><a href="/certificates?{{ qs }}&sort=risk&dir={{ 'desc' if sort == 'risk' and direction == 'asc' else 'asc' }}">Риск</a></th>
-    <th><a href="/certificates?{{ qs }}&sort=owner&dir={{ 'desc' if sort == 'owner' and direction == 'asc' else 'asc' }}">Владелец</a></th>
-  </tr>
-  {% for service, result in rows %}
-  <tr class="status-{{ result.status|lower }}">
-    <td>{{ service.service_name or '—' }}</td>
-    <td><a href="/certificates/{{ result.id }}">{{ service.host }}:{{ service.port }}</a></td>
-    <td>{{ result.issuer_cn or '' }}</td>
-    <td>{{ result.not_after|ru_date }}</td>
-    <td>{{ result.days_left if result.days_left is not none else '' }}</td>
-    <td>{{ result.status }}</td>
-    <td>{{ result.risk_score if result.risk_score is not none else 'N/A' }} {{ result.risk_level }}</td>
-    <td>{{ service.owner or 'не назначен' }}</td>
-  </tr>
-  {% endfor %}
-</table>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th><a href="/certificates?{{ qs }}&sort=service&dir={{ 'desc' if sort == 'service' and direction == 'asc' else 'asc' }}">Сервис {% if sort == 'service' %}{{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a></th>
+        <th><a href="/certificates?{{ qs }}&sort=host&dir={{ 'desc' if sort == 'host' and direction == 'asc' else 'asc' }}">Хост:порт {% if sort == 'host' %}{{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a></th>
+        <th><a href="/certificates?{{ qs }}&sort=issuer&dir={{ 'desc' if sort == 'issuer' and direction == 'asc' else 'asc' }}">Issuer {% if sort == 'issuer' %}{{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a></th>
+        <th><a href="/certificates?{{ qs }}&sort=not_after&dir={{ 'desc' if sort == 'not_after' and direction == 'asc' else 'asc' }}">Действует до {% if sort == 'not_after' %}{{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a></th>
+        <th><a href="/certificates?{{ qs }}&sort=days_left&dir={{ 'desc' if sort == 'days_left' and direction == 'asc' else 'asc' }}">Дней {% if sort == 'days_left' %}{{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a></th>
+        <th><a href="/certificates?{{ qs }}&sort=status&dir={{ 'desc' if sort == 'status' and direction == 'asc' else 'asc' }}">Статус {% if sort == 'status' %}{{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a></th>
+        <th><a href="/certificates?{{ qs }}&sort=risk&dir={{ 'desc' if sort == 'risk' and direction == 'asc' else 'asc' }}">Риск {% if sort == 'risk' %}{{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a></th>
+        <th><a href="/certificates?{{ qs }}&sort=owner&dir={{ 'desc' if sort == 'owner' and direction == 'asc' else 'asc' }}">Владелец {% if sort == 'owner' %}{{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a></th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for service, result in rows %}
+      <tr class="status-{{ result.status|lower }}">
+        <td><strong>{{ service.service_name or '—' }}</strong></td>
+        <td><a href="/certificates/{{ result.id }}"><strong>{{ service.host }}:{{ service.port }}</strong></a></td>
+        <td>{{ result.issuer_cn or '—' }}</td>
+        <td>{{ result.not_after|ru_date }}</td>
+        <td>
+          {% if result.days_left is not none %}
+            {% if result.days_left < 0 %}
+              <strong style="color: #dc2626;">{{ result.days_left }} дн. (истёк)</strong>
+            {% elif result.days_left <= 14 %}
+              <strong style="color: #ea580c;">{{ result.days_left }} дн.</strong>
+            {% elif result.days_left <= 30 %}
+              <strong style="color: #d97706;">{{ result.days_left }} дн.</strong>
+            {% else %}
+              {{ result.days_left }} дн.
+            {% endif %}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td><span class="badge badge-{{ result.status|lower }}">{{ result.status }}</span></td>
+        <td>
+          <span class="badge badge-{{ result.risk_level|lower }}">
+            {{ result.risk_score if result.risk_score is not none else 'N/A' }} {{ result.risk_level }}
+          </span>
+        </td>
+        <td>{{ service.owner or 'не назначен' }}</td>
+        <td><a href="/certificates/{{ result.id }}" class="btn-sm btn-outline">Карточка</a></td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" style="text-align: center; color: #64748b; padding: 2rem;">Сертификаты по заданным фильтрам не найдены.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

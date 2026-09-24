@@ -1,67 +1,164 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>{{ service.service_name or service.host }} — {{ service.host }}:{{ service.port }}</h1>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+  <a href="/certificates" class="btn-sm btn-outline">← Назад к списку</a>
+  <span class="badge badge-{{ service.criticality }}">{{ service.criticality|upper }} PRIORITY</span>
+</div>
+
+<h1>{{ service.service_name or service.host }} <span style="font-weight: 400; color: #64748b; font-size: 1.25rem;">({{ service.host }}:{{ service.port }})</span></h1>
+
 <div class="cards">
-  <div class="card status-{{ result.status|lower }}"><span>Статус</span><strong>{{ result.status }}</strong></div>
+  <div class="card status-{{ result.status|lower }}">
+    <span>Статус сертификата</span>
+    <strong style="font-size: 1.6rem;">{{ result.status }}</strong>
+    <span class="sub">Срок действия</span>
+  </div>
   <div class="card status-{{ result.risk_level|lower }}">
     <span>Risk Score</span>
-    <strong>{{ result.risk_score if result.risk_score is not none else 'N/A' }}</strong>
-    <small>{{ result.risk_level }}</small>
+    <strong style="font-size: 1.6rem;">{{ result.risk_score if result.risk_score is not none else 'N/A' }}</strong>
+    <span class="badge badge-{{ result.risk_level|lower }}" style="margin-top: 0.35rem;">{{ result.risk_level }}</span>
   </div>
-  <div class="card"><span>Дней осталось</span><strong>{{ result.days_left if result.days_left is not none else '—' }}</strong></div>
+  <div class="card">
+    <span>Дней осталось</span>
+    <strong style="font-size: 1.6rem;">
+      {% if result.days_left is not none %}
+        {{ result.days_left }}
+      {% else %}
+        —
+      {% endif %}
+    </strong>
+    <span class="sub">до {{ result.not_after|ru_date }}</span>
+  </div>
 </div>
-<h2>Сертификат</h2>
-<table>
-  <tr><th>Владелец</th><td>{{ service.owner or 'не назначен' }}</td></tr>
-  <tr><th>Критичность</th><td>{{ service.criticality }}</td></tr>
-  <tr><th>IP</th><td>{{ result.resolved_ip or '—' }}</td></tr>
-  <tr><th>CN</th><td>{{ result.subject_cn or '—' }}</td></tr>
-  <tr><th>Issuer</th><td>{{ result.issuer_full or result.issuer_cn or '—' }}</td></tr>
-  <tr><th>SAN DNS</th><td>{% if san_dns %}<ul>{% for name in san_dns %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}—{% endif %}</td></tr>
-  <tr><th>SAN IP</th><td>{% if san_ip %}<ul>{% for name in san_ip %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}—{% endif %}</td></tr>
-  <tr><th>Серийный номер</th><td class="break">{{ result.serial or '—' }}</td></tr>
-  <tr><th>Thumbprint SHA-1</th><td class="break">{{ result.thumbprint_sha1 or '—' }}</td></tr>
-  <tr><th>Thumbprint SHA-256</th><td class="break">{{ result.thumbprint_sha256 or '—' }}</td></tr>
-  <tr><th>Действует с</th><td>{{ result.not_before|ru_date }}</td></tr>
-  <tr><th>Действует до</th><td>{{ result.not_after|ru_date }}</td></tr>
-  <tr><th>Ключ</th><td>{{ result.key_type or '—' }} {{ result.key_size or '' }}</td></tr>
-  <tr><th>Подпись</th><td>{{ result.sig_hash or '—' }}</td></tr>
-  <tr><th>TLS</th><td>{{ result.tls_version or '—' }}</td></tr>
-  <tr><th>Цепочка</th><td>{{ result.chain_status }} {% if result.chain_verify_message %}({{ result.chain_verify_message }}){% endif %}</td></tr>
-  <tr><th>Имя совпадает</th><td>{{ 'Да' if result.hostname_match else ('Нет' if result.hostname_match is sameas false else '—') }}</td></tr>
-  <tr><th>Self-signed</th><td>{{ 'Да' if result.self_signed else ('Нет' if result.self_signed is sameas false else '—') }}</td></tr>
-  {% if result.error %}<tr><th>Ошибка</th><td>{{ result.error }}</td></tr>{% endif %}
-</table>
-<h2>Находки и рекомендации</h2>
+
+<h2>Атрибуты сертификата</h2>
+<div class="table-wrap">
+  <table>
+    <tbody>
+      <tr><th style="width: 240px;">Владелец сервиса</th><td><strong>{{ service.owner or 'не назначен' }}</strong></td></tr>
+      <tr><th>Критичность</th><td><span class="badge badge-{{ service.criticality }}">{{ service.criticality }}</span></td></tr>
+      <tr><th>IP-адрес</th><td><code>{{ result.resolved_ip or '—' }}</code></td></tr>
+      <tr><th>Common Name (CN)</th><td><strong>{{ result.subject_cn or '—' }}</strong></td></tr>
+      <tr><th>Издатель (Issuer)</th><td>{{ result.issuer_full or result.issuer_cn or '—' }}</td></tr>
+      <tr>
+        <th>SAN DNS</th>
+        <td>
+          {% if san_dns %}
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              {% for name in san_dns %}<code>{{ name }}</code>{% endfor %}
+            </div>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>SAN IP</th>
+        <td>
+          {% if san_ip %}
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              {% for ip in san_ip %}<code>{{ ip }}</code>{% endfor %}
+            </div>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      <tr><th>Серийный номер</th><td><code class="break">{{ result.serial or '—' }}</code></td></tr>
+      <tr><th>Thumbprint SHA-1</th><td><code class="break">{{ result.thumbprint_sha1 or '—' }}</code></td></tr>
+      <tr><th>Thumbprint SHA-256</th><td><code class="break">{{ result.thumbprint_sha256 or '—' }}</code></td></tr>
+      <tr><th>Действует с</th><td>{{ result.not_before|ru_date }}</td></tr>
+      <tr><th>Действует до</th><td><strong>{{ result.not_after|ru_date }}</strong></td></tr>
+      <tr><th>Параметры ключа</th><td><code>{{ result.key_type or '—' }} {{ result.key_size or '' }}</code></td></tr>
+      <tr><th>Алгоритм подписи</th><td><code>{{ result.sig_hash or '—' }}</code></td></tr>
+      <tr><th>Версия TLS</th><td><code>{{ result.tls_version or '—' }}</code></td></tr>
+      <tr>
+        <th>Цепочка доверия</th>
+        <td>
+          <span class="badge {% if result.chain_status == 'trusted' %}badge-ok{% elif result.chain_status == 'self_signed' %}badge-information{% else %}badge-critical{% endif %}">
+            {{ result.chain_status }}
+          </span>
+          {% if result.chain_verify_message %}<span style="color: #64748b; font-size: 0.8rem; margin-left: 0.5rem;">({{ result.chain_verify_message }})</span>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>Соответствие имени</th>
+        <td>
+          {% if result.hostname_match is sameas true %}
+            <span class="badge badge-ok">Да (валидно)</span>
+          {% elif result.hostname_match is sameas false %}
+            <span class="badge badge-critical">Нет (mismatch)</span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>Self-signed</th>
+        <td>
+          {% if result.self_signed is sameas true %}
+            <span class="badge badge-warning">Да</span>
+          {% elif result.self_signed is sameas false %}
+            <span class="badge badge-ok">Нет (CA-issued)</span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      {% if result.error %}
+      <tr style="background: #fef2f2;"><th style="color: #991b1b;">Ошибка</th><td style="color: #991b1b;"><strong>{{ result.error }}</strong></td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Выявленные риски и рекомендации</h2>
 {% if findings %}
-<table>
-  <tr><th>Код</th><th>Причина</th><th>Рекомендация</th></tr>
   {% for finding in findings %}
-  <tr>
-    <td>{{ finding.code }}</td>
-    <td>{{ finding.reason }}</td>
-    <td>{{ finding.recommendation }}</td>
-  </tr>
+  <div class="recommendation-card sev-{{ finding.severity|lower if finding.severity else 'medium' }}">
+    <div class="code">
+      <span>{{ finding.code }}</span>
+      <span class="badge badge-{{ finding.severity|lower if finding.severity else 'warning' }}">{{ finding.severity or 'Warning' }}</span>
+    </div>
+    <div class="reason">{{ finding.reason }}</div>
+    <div class="rec">
+      <strong>Рекомендация:</strong> {{ finding.recommendation }}
+    </div>
+  </div>
   {% endfor %}
-</table>
 {% else %}
-<p class="empty">Проблем не обнаружено.</p>
+<p class="empty">Замечаний и рисков не обнаружено. Сертификат и сервис соответствуют требованиям безопасности.</p>
 {% endif %}
-<h2>История сканов</h2>
+
+<h2>История сканирований сервиса</h2>
 {% if history %}
-<table>
-  <tr><th>Скан</th><th>Дата</th><th>Статус</th><th>Дней</th><th>Risk</th></tr>
-  {% for scan, item in history %}
-  <tr>
-    <td><a href="/scans/{{ scan.id }}">#{{ scan.id }}</a></td>
-    <td>{{ scan.finished_at|ru_datetime }}</td>
-    <td>{{ item.status }}</td>
-    <td>{{ item.days_left if item.days_left is not none else '—' }}</td>
-    <td>{{ item.risk_score if item.risk_score is not none else 'N/A' }}</td>
-  </tr>
-  {% endfor %}
-</table>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Скан</th>
+        <th>Дата завершения</th>
+        <th>Статус</th>
+        <th>Дней</th>
+        <th>Risk Score</th>
+        <th>Уровень</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for scan, item in history %}
+      <tr class="status-{{ item.status|lower }}">
+        <td><a href="/scans/{{ scan.id }}">#{{ scan.id }}</a></td>
+        <td>{{ scan.finished_at|ru_datetime }}</td>
+        <td><span class="badge badge-{{ item.status|lower }}">{{ item.status }}</span></td>
+        <td>{{ item.days_left if item.days_left is not none else '—' }}</td>
+        <td><strong>{{ item.risk_score if item.risk_score is not none else 'N/A' }}</strong></td>
+        <td><span class="badge badge-{{ item.risk_level|lower }}">{{ item.risk_level }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
-<p class="empty">История пока отсутствует.</p>
+<p class="empty">История сканирований отсутствует.</p>
 {% endif %}
 {% endblock %}

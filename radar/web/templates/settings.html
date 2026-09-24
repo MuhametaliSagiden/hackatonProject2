@@ -1,17 +1,59 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Настройки</h1>
-{% if message %}<div class="panel">{{ message }}</div>{% endif %}
-{% if error %}<div class="panel">{{ error }}</div>{% endif %}
-<form class="settings" method="post">
-  <label>Информационный порог<input type="number" name="info_days" value="{{ values.get('info_days','60') }}" required></label>
-  <label>Предупреждение<input type="number" name="warning_days" value="{{ values.get('warning_days','30') }}" required></label>
-  <label>Критический порог<input type="number" name="critical_days" value="{{ values.get('critical_days','14') }}" required></label>
-  <label>Пороги уведомлений<input name="notify_thresholds" value="{{ values.get('notify_thresholds','60,30,14,7,1') }}" required></label>
-  <label>Расписание, часов<input type="number" name="schedule_hours" value="{{ values.get('schedule_hours','0') }}" min="0"></label>
-  <button class="primary">Сохранить и пересчитать</button>
-</form>
-<form method="post" action="/settings/test">
-  <button>Отправить тестовое уведомление</button>
-</form>
+<h1>Конфигурация и пороги рисков</h1>
+
+{% if message %}<div class="panel alert-success" style="margin-bottom: 1.5rem; background: #f0fdf4; border-color: #bbf7d0; color: #166534;"><strong>Успешно:</strong> {{ message }}</div>{% endif %}
+{% if error %}<div class="panel alert-error" style="margin-bottom: 1.5rem; background: #fef2f2; border-color: #fecaca; color: #991b1b;"><strong>Ошибка:</strong> {{ error }}</div>{% endif %}
+
+<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));">
+  <div class="panel">
+    <h2>Пороги статусов срока действия</h2>
+    <p style="font-size: 0.825rem; color: #64748b; margin-bottom: 1rem;">
+      При изменении порогов статус всех ранее отсканированных сертификатов пересчитывается автоматически без повторного сетевого обращения. Требование: <code>инфо &gt; предупреждение &gt; критический &ge; 0</code>.
+    </p>
+    <form class="settings" method="post" style="max-width: 100%;">
+      <label>
+        Информационный порог (дней)
+        <input type="number" name="info_days" value="{{ values.get('info_days','60') }}" required>
+      </label>
+      <label>
+        Порог предупреждения (Warning, дней)
+        <input type="number" name="warning_days" value="{{ values.get('warning_days','30') }}" required>
+      </label>
+      <label>
+        Критический порог (Critical, дней)
+        <input type="number" name="critical_days" value="{{ values.get('critical_days','14') }}" required>
+      </label>
+      <label>
+        Пороги уведомлений (через запятую)
+        <input name="notify_thresholds" value="{{ values.get('notify_thresholds','60,30,14,7,1') }}" required>
+        <span style="font-size: 0.75rem; color: #64748b;">Рекомендуемые: 60, 30, 14, 7, 1</span>
+      </label>
+      <label>
+        Периодичность фонового сканирования (часов)
+        <input type="number" name="schedule_hours" value="{{ values.get('schedule_hours','0') }}" min="0">
+        <span style="font-size: 0.75rem; color: #64748b;">0 — периодическое сканирование отключено</span>
+      </label>
+      <button class="primary" style="margin-top: 0.5rem;">Сохранить и пересчитать</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Проверка каналов оповещения</h2>
+    <p style="font-size: 0.825rem; color: #64748b; margin-bottom: 1rem;">
+      Отправка тестового уведомления во все активные каналы: консоль/системный лог, корпоративный SMTP/Email и Telegram бот.
+    </p>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.25rem;">
+      <div style="font-size: 0.85rem; color: #334155; margin-bottom: 0.5rem;"><strong>Активные каналы:</strong></div>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.825rem; color: #475569;">
+        <li><strong>Консоль и системный аудит</strong>: Включен постоянно</li>
+        <li><strong>SMTP / Email</strong>: Настраивается через config.yaml и .env</li>
+        <li><strong>Telegram Bot</strong>: Настраивается через токен в .env</li>
+      </ul>
+    </div>
+    <form method="post" action="/settings/test">
+      <button class="btn-outline">Отправить тестовое уведомление</button>
+    </form>
+  </div>
+</div>
 {% endblock %}

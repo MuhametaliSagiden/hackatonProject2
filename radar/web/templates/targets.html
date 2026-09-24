@@ -20,36 +20,42 @@
   </div>
 </div>
 
-<h2>Сервисы</h2>
+<h2>Зарегистрированные сервисы ({{ items|length }})</h2>
 {% if items %}
-<table>
-  <tr>
-    <th>Хост</th>
-    <th>Порт</th>
-    <th>Сервис</th>
-    <th>Владелец</th>
-    <th>Критичность</th>
-    <th></th>
-  </tr>
-  {% for item in items %}
-  <tr>
-    <td>{{ item.host }}</td>
-    <td>{{ item.port }}</td>
-    <td>{{ item.service_name or '—' }}</td>
-    <td colspan="3">
-      <form method="post" action="/targets/{{ item.id }}" class="inline">
-        <input name="owner" value="{{ item.owner or '' }}" placeholder="владелец">
-        <select name="criticality">
-          <option value="high" {% if item.criticality == 'high' %}selected{% endif %}>high</option>
-          <option value="medium" {% if item.criticality == 'medium' %}selected{% endif %}>medium</option>
-          <option value="low" {% if item.criticality == 'low' %}selected{% endif %}>low</option>
-        </select>
-        <button>Сохранить</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Хост</th>
+        <th>Порт</th>
+        <th>Сервис</th>
+        <th>Владелец</th>
+        <th>Критичность</th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td><strong>{{ item.host }}</strong></td>
+        <td><code>{{ item.port }}</code></td>
+        <td>{{ item.service_name or '—' }}</td>
+        <td colspan="3">
+          <form method="post" action="/targets/{{ item.id }}" class="inline">
+            <input name="owner" value="{{ item.owner or '' }}" placeholder="Владелец сервиса">
+            <select name="criticality">
+              <option value="high" {% if item.criticality == 'high' %}selected{% endif %}>high</option>
+              <option value="medium" {% if item.criticality == 'medium' %}selected{% endif %}>medium</option>
+              <option value="low" {% if item.criticality == 'low' %}selected{% endif %}>low</option>
+            </select>
+            <button class="btn-sm btn-outline">Сохранить</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
 <p class="empty">Целей пока нет. Загрузите файл или введите список вручную.</p>
 {% endif %}

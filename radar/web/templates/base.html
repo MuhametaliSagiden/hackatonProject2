@@ -17,8 +17,13 @@
     <a href="/notifications">Уведомления</a>
     <a href="/audit">Аудит</a>
     <a href="/settings">Настройки</a>
+    <a href="/static/presentation.html" target="_blank" style="color: #60a5fa; font-weight: 600;">Презентация ↗</a>
   </nav>
   <main class="container">{% block content %}{% endblock %}</main>
+  <footer class="container footer">
+    <div>Certificate Radar • Хакатон «Автоматизация и повышение надёжности корпоративной инфраструктуры»</div>
+    <div class="footer-badge">Режим: Read Only • TLS Handshake</div>
+  </footer>
   <script src="{{ url_for('static', path='/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>

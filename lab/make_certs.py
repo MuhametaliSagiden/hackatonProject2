@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -324,10 +325,19 @@ def generate(out_dir: Path | str | None = None, now: datetime | None = None):
         )
         write_bundle("weak.lab.local", w_key, w_cert, None)
 
-    print(f"Сертификаты созданы: {out}")
+    try:
+        print(f"Сертификаты созданы: {out}")
+    except UnicodeEncodeError:
+        print(f"Certificates created: {out}")
+
+
+import contextlib
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        with contextlib.suppress(Exception):
+            sys.stdout.reconfigure(encoding="utf-8")
     generate(OUT)
 
 
