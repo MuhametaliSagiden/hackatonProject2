@@ -1,4 +1,5 @@
 import json
+from threading import Thread
 from fastapi import FastAPI, File, UploadFile, Query, Form
 from fastapi.responses import HTMLResponse, Response
 from sqlmodel import select
@@ -8,7 +9,7 @@ from ..export.csv_export import export_csv
 from ..export.html_export import export_html
 from ..export.xlsx_export import export_xlsx
 from ..models import AuditLog, CertResult, Service, NotificationLog, Setting, Scan
-from ..services import import_targets, run_scan
+from ..services import import_targets, run_scan, recompute_latest
 
 app = FastAPI(title="Certificate Radar")
 
@@ -24,7 +25,9 @@ async def api_import(file: UploadFile = File(...)):
 
 @app.post("/api/scan")
 def api_scan():
-    scan=run_scan("ui"); return {"id":scan.id,"status":scan.status,"processed":scan.processed,"total":scan.total}
+    db=session(); item=Scan(total=len(list(db.exec(select(Service)))), triggered_by="ui"); db.add(item); db.commit(); db.refresh(item); db.close()
+    def worker(): run_scan("ui", item.id)
+    Thread(target=worker, daemon=True).start(); return {"id":item.id,"status":"running","processed":0,"total":item.total}
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
@@ -69,7 +72,7 @@ def save_settings(info_days: int = Form(...), warning_days: int = Form(...), cri
     db=session()
     for key,value in {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}.items():
         item=db.get(Setting,key) or Setting(key=key); item.value=str(value); db.add(item)
-    db.commit(); db.close(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}); return "<p>Настройки сохранены</p><a href='/settings'>Назад</a>"
+    db.commit(); db.close(); recompute_latest(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}); return "<p>Настройки сохранены и результаты пересчитаны</p><a href='/settings'>Назад</a>"
 
 @app.get("/scans", response_class=HTMLResponse)
 def scans():
