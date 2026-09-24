@@ -1,18 +1,44 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>История сканов</h1>
-<form method="post" action="/scans/start"><button class="primary">Запустить скан</button></form>
-<table>
-  <tr><th>ID</th><th>Начало</th><th>Завершение</th><th>Статус</th><th>Обработано</th><th>Источник</th></tr>
-  {% for item in items %}
-  <tr>
-    <td><a href="/scans/{{ item.id }}">{{ item.id }}</a></td>
-    <td>{{ item.started_at|ru_datetime }}</td>
-    <td>{{ item.finished_at|ru_datetime }}</td>
-    <td>{{ item.status }}</td>
-    <td>{{ item.processed }}/{{ item.total }}</td>
-    <td>{{ item.triggered_by }}</td>
-  </tr>
-  {% endfor %}
-</table>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <h1 style="margin: 0;">История сканирований</h1>
+  <form method="post" action="/scans/start" style="margin: 0;"><button class="primary">Запустить новый скан</button></form>
+</div>
+
+{% if items %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Начало</th>
+        <th>Завершение</th>
+        <th>Статус</th>
+        <th>Обработано</th>
+        <th>Инициатор</th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td><a href="/scans/{{ item.id }}"><strong>#{{ item.id }}</strong></a></td>
+        <td>{{ item.started_at|ru_datetime }}</td>
+        <td>{{ item.finished_at|ru_datetime }}</td>
+        <td>
+          <span class="badge {% if item.status == 'done' %}badge-ok{% elif item.status == 'running' %}badge-warning{% else %}badge-critical{% endif %}">
+            {{ item.status }}
+          </span>
+        </td>
+        <td><strong>{{ item.processed }}</strong> / {{ item.total }}</td>
+        <td><code>{{ item.triggered_by }}</code></td>
+        <td><a href="/scans/{{ item.id }}" class="btn-sm btn-outline">Детали</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">Сканирования пока не проводились.</p>
+{% endif %}
 {% endblock %}

@@ -3,21 +3,42 @@
 {% if item.status == 'running' %}<meta http-equiv="refresh" content="2">{% endif %}
 {% endblock %}
 {% block content %}
-<h1>Скан #{{ item.id }}</h1>
-<div class="card">
-  <p>Статус: <strong>{{ item.status }}</strong></p>
-  <p>Обработано: {{ item.processed }}/{{ item.total }}</p>
-  <p>Начало: {{ item.started_at|ru_datetime }}</p>
-  <p>Завершение: {{ item.finished_at|ru_datetime }}</p>
-  <progress value="{{ item.processed }}" max="{{ item.total or 1 }}"></progress>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+  <a href="/scans" class="btn-sm btn-outline">← К истории сканов</a>
+  <span class="badge {% if item.status == 'done' %}badge-ok{% elif item.status == 'running' %}badge-warning{% else %}badge-critical{% endif %}">
+    {{ item.status|upper }}
+  </span>
 </div>
+
+<h1>Скан #{{ item.id }}</h1>
+
+<div class="panel" style="margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+    <div>Прогресс сканирования: <strong>{{ item.processed }}</strong> из <strong>{{ item.total }}</strong> целей</div>
+    <div><strong>{{ (item.processed / (item.total or 1) * 100)|round|int }}%</strong></div>
+  </div>
+  <progress value="{{ item.processed }}" max="{{ item.total or 1 }}" style="margin-bottom: 1rem;"></progress>
+  <div style="display: flex; gap: 2rem; flex-wrap: wrap; font-size: 0.875rem; color: #475569;">
+    <div>Начало: <strong>{{ item.started_at|ru_datetime }}</strong></div>
+    <div>Завершение: <strong>{{ item.finished_at|ru_datetime }}</strong></div>
+    <div>Инициатор: <code>{{ item.triggered_by }}</code></div>
+  </div>
+</div>
+
 {% if summary %}
-<h2>Сводка</h2>
+<h2>Сводка результатов сканирования</h2>
 <div class="cards">
   {% for name, count in summary.items() %}
-  <div class="card status-{{ name|lower }}"><strong>{{ count }}</strong><span>{{ name }}</span></div>
+  <a class="card status-{{ name|lower }}" href="/certificates?status={{ name }}">
+    <strong>{{ count }}</strong>
+    <span>{{ name }}</span>
+    <span class="sub">Показать сервисы →</span>
+  </a>
   {% endfor %}
 </div>
 {% endif %}
-<p><a href="/scans">Вернуться к истории</a></p>
+
+<div style="margin-top: 2rem;">
+  <a href="/certificates" class="primary" style="display: inline-block; text-decoration: none; padding: 0.55rem 1.25rem; border-radius: 0.45rem;">Перейти к сертификатам</a>
+</div>
 {% endblock %}
