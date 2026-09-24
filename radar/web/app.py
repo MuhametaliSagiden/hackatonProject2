@@ -78,8 +78,8 @@ def certificate(result_id: int):
     return f"<h1>{service.host}</h1><p>Статус: {result.status}; Risk: {result.risk_score or 'N/A'} ({result.risk_level})</p><p>CN: {result.subject_cn or ''}; Issuer: {result.issuer_cn or ''}</p><ul>{items}</ul>"
 
 @app.get("/export")
-def export(format: str = Query("csv")):
-    data=rows(); audit("EXPORT", {"format":format})
+def export(format: str = Query("csv"), status: str | None = None, q: str | None = None, owner: str | None = None, issuer: str | None = None):
+    data=[(s,r) for s,r in rows() if (not status or r.status==status) and (not owner or s.owner==owner) and (not issuer or r.issuer_cn==issuer) and (not q or q.lower() in (s.host+" "+(s.service_name or "")).lower())]; audit("EXPORT", {"format":format,"status":status,"rows":len(data)})
     if format == "xlsx": return Response(export_xlsx(data), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     if format == "html": return HTMLResponse(export_html(data))
     return Response(export_csv(data), media_type="text/csv; charset=utf-8", headers={"Content-Disposition":"attachment; filename=certificates.csv"})

@@ -13,4 +13,6 @@ def sample():
 def test_all_exports():
     assert export_csv(sample()).startswith("\ufeff")
     assert "<table>" in export_html(sample())
-    assert load_workbook(BytesIO(export_xlsx(sample()))).active.max_row == 2
+    sheet=load_workbook(BytesIO(export_xlsx(sample()))).active
+    assert sheet.max_row == 2
+    assert sheet.auto_filter.ref == "A1:G2"
