@@ -1,4 +1,5 @@
 import json
+from contextlib import asynccontextmanager
 from threading import Thread
 from fastapi import FastAPI, File, UploadFile, Query, Form
 from fastapi.responses import HTMLResponse, Response
@@ -11,8 +12,20 @@ from ..export.xlsx_export import export_xlsx
 from ..models import AuditLog, CertResult, Service, NotificationLog, Setting, Scan
 from ..services import import_targets, run_scan, recompute_latest
 from ..notify.service import send_test
+from ..scheduler import start_scheduler
+from ..config import load_config
 
-app = FastAPI(title="Certificate Radar")
+_scheduler = None
+
+@asynccontextmanager
+async def lifespan(app):
+    global _scheduler
+    if _scheduler is None:
+        _scheduler=start_scheduler(load_config().get("scan",{}).get("schedule_hours",0))
+    yield
+    if _scheduler: _scheduler.shutdown(wait=False); _scheduler=None
+
+app = FastAPI(title="Certificate Radar", lifespan=lifespan)
 
 @app.get("/health")
 def health(): return {"status": "ok"}
