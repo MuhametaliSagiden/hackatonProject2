@@ -93,12 +93,17 @@ def load_config(path: Path | None = None, override_from_db: bool = True) -> dict
                     if isinstance(val, list):
                         value["notify_thresholds"] = [int(x) for x in val]
                     elif isinstance(val, str):
-                        value["notify_thresholds"] = [
-                            int(x.strip()) for x in val.split(",") if x.strip()
-                        ]
+                        value["notify_thresholds"] = [int(x.strip()) for x in val.split(",") if x.strip()]
                 if "schedule_hours" in settings_map:
                     value["scan"]["schedule_hours"] = int(settings_map["schedule_hours"])
-                for k in ["email_enabled", "smtp_host", "smtp_port", "smtp_from", "email_to", "telegram_enabled"]:
+                for k in [
+                    "email_enabled",
+                    "smtp_host",
+                    "smtp_port",
+                    "smtp_from",
+                    "email_to",
+                    "telegram_enabled",
+                ]:
                     if k in settings_map:
                         value["notify"][k] = settings_map[k]
         except Exception:  # noqa: S110

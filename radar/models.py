@@ -10,9 +10,7 @@ def now_utc():
 
 
 class Service(SQLModel, table=True):
-    __table_args__ = (
-        UniqueConstraint("host", "port", name="uq_service_host_port"),
-    )
+    __table_args__ = (UniqueConstraint("host", "port", name="uq_service_host_port"),)
 
     id: int | None = Field(default=None, primary_key=True)
     host: str = Field(index=True)

@@ -19,6 +19,8 @@ class ChainCheck:
         ctx.chain_status = status
 
         if status == "untrusted" and not ctx.self_signed:
-            err_msg = ctx.raw.chain_verify_message or str(ctx.raw.chain_verify_code or "Недоверенный сертификат")
+            err_msg = ctx.raw.chain_verify_message or str(
+                ctx.raw.chain_verify_code or "Недоверенный сертификат"
+            )
             return [create_finding("CHAIN_ERROR", severity="high", error=err_msg)]
         return []

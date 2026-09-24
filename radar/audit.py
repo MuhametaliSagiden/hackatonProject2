@@ -19,9 +19,7 @@ def audit(action: str, details: dict[str, Any] | str | None = None):
             backupCount=3,
             encoding="utf-8",
         )
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-        )
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
 

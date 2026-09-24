@@ -35,7 +35,10 @@ def import_targets(data: bytes, filename: str) -> ImportReport:
                 db.add(Service(**item))
                 report.added += 1
         db.commit()
-    audit("IMPORT_TARGETS", {"added": report.added, "duplicates": report.duplicates, "invalid": len(report.invalid)})
+    audit(
+        "IMPORT_TARGETS",
+        {"added": report.added, "duplicates": report.duplicates, "invalid": len(report.invalid)},
+    )
     return report
 
 
@@ -79,9 +82,7 @@ def latest_results(
 ) -> list[tuple[Service, CertResult]]:
     filters = filters or {}
     with session() as db:
-        latest = db.exec(
-            select(Scan).where(Scan.status == "done").order_by(Scan.id.desc())
-        ).first()
+        latest = db.exec(select(Scan).where(Scan.status == "done").order_by(Scan.id.desc())).first()
         if not latest:
             return []
         results = list(db.exec(select(CertResult).where(CertResult.scan_id == latest.id)))
@@ -151,9 +152,7 @@ def latest_results(
 
 def recompute_latest() -> int:
     with session() as db:
-        latest = db.exec(
-            select(Scan).where(Scan.status == "done").order_by(Scan.id.desc())
-        ).first()
+        latest = db.exec(select(Scan).where(Scan.status == "done").order_by(Scan.id.desc())).first()
         if not latest:
             return 0
 
@@ -202,15 +201,11 @@ def recompute_latest() -> int:
             item.status = res["status"]
             item.risk_score = res["risk_score"]
             item.risk_level = res["risk_level"]
-            item.findings = [
-                f.__dict__ if hasattr(f, "__dict__") else f for f in res["findings"]
-            ]
+            item.findings = [f.__dict__ if hasattr(f, "__dict__") else f for f in res["findings"]]
             item.hostname_match = res.get("hostname_match")
             item.self_signed = res.get("self_signed")
             item.weak_crypto = res.get("weak_crypto")
-            item.chain_status = chain_status(
-                item.chain_verify_code, res.get("self_signed", False)
-            )
+            item.chain_status = chain_status(item.chain_verify_code, res.get("self_signed", False))
 
             db.add(item)
             count += 1

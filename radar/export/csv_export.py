@@ -38,7 +38,9 @@ def extract_row_values(service: Any, result: Any) -> list[str]:
 
     findings = result.findings if isinstance(getattr(result, "findings", None), list) else []
     reasons = [f.get("reason", f.get("code", "")) for f in findings if isinstance(f, dict)]
-    recommendations = [f.get("recommendation", "") for f in findings if isinstance(f, dict) and f.get("recommendation")]
+    recommendations = [
+        f.get("recommendation", "") for f in findings if isinstance(f, dict) and f.get("recommendation")
+    ]
 
     hn_match = getattr(result, "hostname_match", None)
     hn_match_str = "Да" if hn_match is True else ("Нет" if hn_match is False else "")

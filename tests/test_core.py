@@ -7,6 +7,7 @@ def test_parser_deduplicates_and_urls():
     assert report.duplicates == 1
     assert report.services[0]["host"] == "a.example"
 
+
 def test_risk_levels():
     assert score("Critical", [], "high")[1] == "High"
     assert score("Expired", [], "high")[0] == 80

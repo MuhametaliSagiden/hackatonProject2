@@ -11,12 +11,7 @@ def test_scan_handles_256_unreachable_targets_in_isolated_db(tmp_path, monkeypat
     engine = create_engine(f"sqlite:///{(tmp_path / 'load.db').as_posix()}")
     SQLModel.metadata.create_all(engine)
     with Session(engine) as db:
-        db.add_all(
-            [
-                Service(host=f"10.250.0.{index}", port=8499)
-                for index in range(1, 257)
-            ]
-        )
+        db.add_all([Service(host=f"10.250.0.{index}", port=8499) for index in range(1, 257)])
         db.commit()
 
     monkeypatch.setattr(

@@ -42,12 +42,7 @@ def init_db(engine_instance=None):
 
     # Safe SQLite schema migration: ensure indexes and constraints exist
     with eng.connect() as conn:
-        conn.execute(
-            text(
-                "CREATE UNIQUE INDEX IF NOT EXISTS uq_service_host_port "
-                "ON service (host, port);"
-            )
-        )
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_service_host_port ON service (host, port);"))
         conn.execute(
             text(
                 "CREATE UNIQUE INDEX IF NOT EXISTS uq_notification_success "

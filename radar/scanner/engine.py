@@ -45,7 +45,9 @@ def run_scan(scan_id: int | None = None, triggered_by: str = "cli") -> Scan:
                 db.refresh(scan)
             actual_scan_id = scan.id
 
-        audit("SCAN_STARTED", {"scan_id": actual_scan_id, "triggered_by": triggered_by, "total": len(services)})
+        audit(
+            "SCAN_STARTED", {"scan_id": actual_scan_id, "triggered_by": triggered_by, "total": len(services)}
+        )
 
         cfg = load_config()
         workers = max(1, int(cfg.get("scan", {}).get("workers", 32)))
@@ -82,8 +84,7 @@ def run_scan(scan_id: int | None = None, triggered_by: str = "cli") -> Scan:
                         analysis_res = analyze(raw, srv, thresholds)
 
                     findings_data = [
-                        f.__dict__ if hasattr(f, "__dict__") else f
-                        for f in analysis_res["findings"]
+                        f.__dict__ if hasattr(f, "__dict__") else f for f in analysis_res["findings"]
                     ]
 
                     cert_result = CertResult(
@@ -109,7 +110,9 @@ def run_scan(scan_id: int | None = None, triggered_by: str = "cli") -> Scan:
                         tls_version=raw.tls_version,
                         chain_verify_code=raw.chain_verify_code,
                         chain_verify_message=raw.chain_verify_message,
-                        chain_status=chain_status(raw.chain_verify_code, analysis_res.get("self_signed", False)),
+                        chain_status=chain_status(
+                            raw.chain_verify_code, analysis_res.get("self_signed", False)
+                        ),
                         days_left=analysis_res["days_left"],
                         status=analysis_res["status"],
                         hostname_match=analysis_res.get("hostname_match"),
@@ -140,7 +143,9 @@ def run_scan(scan_id: int | None = None, triggered_by: str = "cli") -> Scan:
                 final_scan = curr_scan
 
             notify_after_scan(actual_scan_id)
-            audit("SCAN_FINISHED", {"scan_id": actual_scan_id, "status": "done", "processed": processed_count})
+            audit(
+                "SCAN_FINISHED", {"scan_id": actual_scan_id, "status": "done", "processed": processed_count}
+            )
             return final_scan
 
         except Exception as exc:
@@ -151,7 +156,15 @@ def run_scan(scan_id: int | None = None, triggered_by: str = "cli") -> Scan:
                     curr_scan.finished_at = datetime.now(UTC)
                     db.add(curr_scan)
                     db.commit()
-            audit("SCAN_FINISHED", {"scan_id": actual_scan_id, "status": "failed", "error": str(exc), "processed": processed_count})
+            audit(
+                "SCAN_FINISHED",
+                {
+                    "scan_id": actual_scan_id,
+                    "status": "failed",
+                    "error": str(exc),
+                    "processed": processed_count,
+                },
+            )
             raise
 
     finally:

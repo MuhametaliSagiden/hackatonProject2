@@ -50,7 +50,9 @@ def main():
         with open(args.file, "rb") as f:
             content = f.read()
         rep = import_targets(content, args.file)
-        print(f"Добавлено: {rep.added}; Обновлено: {rep.updated}; Дубликаты: {rep.duplicates}; Ошибки: {len(rep.invalid)}")
+        print(
+            f"Добавлено: {rep.added}; Обновлено: {rep.updated}; Дубликаты: {rep.duplicates}; Ошибки: {len(rep.invalid)}"
+        )
         if rep.invalid:
             print("\nОшибочные строки:")
             for line_no, raw_text, reason in rep.invalid:
@@ -83,6 +85,7 @@ def main():
 
     elif args.command == "serve":
         import uvicorn
+
         uvicorn.run("radar.web.app:app", host=args.host, port=args.port)
 
 

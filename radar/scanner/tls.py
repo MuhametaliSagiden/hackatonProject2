@@ -91,7 +91,10 @@ def grab(
         except Exception:  # noqa: S110
             pass
 
-        with socket.create_connection((ip, port), timeout=timeout) as sock, ctx.wrap_socket(sock, server_hostname=server_hostname) as conn:
+        with (
+            socket.create_connection((ip, port), timeout=timeout) as sock,
+            ctx.wrap_socket(sock, server_hostname=server_hostname) as conn,
+        ):
             der = conn.getpeercert(binary_form=True)
             version = conn.version()
     except Exception as exc:
@@ -116,7 +119,10 @@ def grab(
         verify.check_hostname = False
         verify.verify_mode = ssl.CERT_REQUIRED
 
-        with socket.create_connection((ip, port), timeout=timeout) as verify_sock, verify.wrap_socket(verify_sock, server_hostname=server_hostname):
+        with (
+            socket.create_connection((ip, port), timeout=timeout) as verify_sock,
+            verify.wrap_socket(verify_sock, server_hostname=server_hostname),
+        ):
             chain_code = 0
             chain_message = "OK"
     except ssl.SSLCertVerificationError as exc:

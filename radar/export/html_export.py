@@ -37,7 +37,7 @@ def export_html(rows: list[tuple[Any, Any]]) -> str:
         f'<div class="summary-card" style="border-left: 4px solid {STATUS_COLORS.get(st, "#ccc")}">'
         f'<span class="summary-title">{escape(st)}</span>'
         f'<span class="summary-count">{count}</span>'
-        f'</div>'
+        f"</div>"
         for st, count in summary_counts.items()
     )
 
@@ -54,9 +54,7 @@ def export_html(rows: list[tuple[Any, Any]]) -> str:
         for i, val in enumerate(values):
             escaped = escape(str(val))
             if COLUMNS[i] == "Статус":
-                cells_html.append(
-                    f'<td><strong style="color: {st_color}">{escaped}</strong></td>'
-                )
+                cells_html.append(f'<td><strong style="color: {st_color}">{escaped}</strong></td>')
             else:
                 cells_html.append(f"<td>{escaped}</td>")
         rows_html.append(f"<tr>{''.join(cells_html)}</tr>")
