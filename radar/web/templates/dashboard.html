@@ -4,55 +4,190 @@
 {% if not has_scan %}
 <p class="empty">Данных пока нет. <a href="/targets">Загрузить цели</a>.</p>
 {% else %}
-<p>Последний скан: {{ last_scan.finished_at|ru_datetime }} ({{ last_scan.processed }}/{{ last_scan.total }})</p>
-<form method="post" action="/scans/start"><button class="primary">Запустить скан</button></form>
+<div class="dashboard-header">
+  <div class="dashboard-meta">
+    Последний скан: <strong>{{ last_scan.finished_at|ru_datetime }}</strong> • 
+    Обработано: <strong>{{ last_scan.processed }}/{{ last_scan.total }} целей</strong> • 
+    Доступность: <strong>{{ reachability_rate }}% ({{ reachable_count }}/{{ total }})</strong>
+  </div>
+  <div class="header-actions">
+    {% if health_score >= 75 %}
+    <span class="health-badge">Индекс надёжности: {{ health_score }}%</span>
+    {% elif health_score >= 50 %}
+    <span class="health-badge health-warn">Индекс надёжности: {{ health_score }}%</span>
+    {% else %}
+    <span class="health-badge health-crit">Индекс надёжности: {{ health_score }}%</span>
+    {% endif %}
+    <form method="post" action="/scans/start" style="margin:0;">
+      <button class="primary btn-sm">Запустить скан</button>
+    </form>
+  </div>
+</div>
+
 <div class="cards">
   {% for name, count in cards.items() %}
-  <a class="card status-{{ name|lower }}" href="/certificates?status={{ name }}"><strong>{{ count }}</strong><span>{{ name }}</span></a>
+  <a class="card status-{{ name|lower }}" href="/certificates?status={{ name }}">
+    <strong>{{ count }}</strong>
+    <span>{{ name }}</span>
+    <span class="sub">Показать сертификаты →</span>
+  </a>
   {% endfor %}
 </div>
+
 <div class="cards">
   {% for name, count in risks.items() %}
-  <a class="card status-{{ name|lower }}" href="/certificates?risk_level={{ name }}"><strong>{{ count }}</strong><span>Риск {{ name }}</span></a>
+  <a class="card status-{{ name|lower }}" href="/certificates?risk_level={{ name }}">
+    <strong>{{ count }}</strong>
+    <span>Риск {{ name }}</span>
+    <span class="sub">Фильтр по риску →</span>
+  </a>
   {% endfor %}
 </div>
+
 <div class="status-bar" role="img" aria-label="Распределение статусов">
   {% for name, count, width in segments %}
-  {% if width > 0 %}<span class="seg status-{{ name|lower }}" style="width: {{ width }}%" title="{{ name }}: {{ count }}"></span>{% endif %}
+  {% if width > 0 %}<span class="seg status-{{ name|lower }}" style="width: {{ width }}%" title="{{ name }}: {{ count }} ({{ width }}%)"></span>{% endif %}
   {% endfor %}
 </div>
+
+<h2>Сводка технических рисков</h2>
+<div class="findings-grid">
+  <div class="finding-box">
+    <div>
+      <div class="title">Ошибки цепочки</div>
+      <div class="count">{{ findings_summary.chain_errors }}</div>
+    </div>
+    <span class="badge {% if findings_summary.chain_errors > 0 %}badge-critical{% else %}badge-ok{% endif %}">
+      {% if findings_summary.chain_errors > 0 %}Untrusted{% else %}В норме{% endif %}
+    </span>
+  </div>
+  <div class="finding-box">
+    <div>
+      <div class="title">Несовпадение CN/SAN</div>
+      <div class="count">{{ findings_summary.hostname_mismatches }}</div>
+    </div>
+    <span class="badge {% if findings_summary.hostname_mismatches > 0 %}badge-warning{% else %}badge-ok{% endif %}">
+      {% if findings_summary.hostname_mismatches > 0 %}Mismatch{% else %}В норме{% endif %}
+    </span>
+  </div>
+  <div class="finding-box">
+    <div>
+      <div class="title">Слабый ключ / хеш</div>
+      <div class="count">{{ findings_summary.weak_crypto }}</div>
+    </div>
+    <span class="badge {% if findings_summary.weak_crypto > 0 %}badge-warning{% else %}badge-ok{% endif %}">
+      {% if findings_summary.weak_crypto > 0 %}Уязвимость{% else %}В норме{% endif %}
+    </span>
+  </div>
+  <div class="finding-box">
+    <div>
+      <div class="title">Самоподписанные</div>
+      <div class="count">{{ findings_summary.self_signed }}</div>
+    </div>
+    <span class="badge {% if findings_summary.self_signed > 0 %}badge-information{% else %}badge-ok{% endif %}">
+      {% if findings_summary.self_signed > 0 %}Self-signed{% else %}CA-signed{% endif %}
+    </span>
+  </div>
+  <div class="finding-box">
+    <div>
+      <div class="title">Без ответственного</div>
+      <div class="count">{{ findings_summary.no_owner }}</div>
+    </div>
+    <span class="badge {% if findings_summary.no_owner > 0 %}badge-critical{% else %}badge-ok{% endif %}">
+      {% if findings_summary.no_owner > 0 %}Требует назначения{% else %}Назначены{% endif %}
+    </span>
+  </div>
+</div>
+
 <h2>Ближайшие окончания</h2>
 {% if nearest %}
-<table>
-  <tr><th>Хост</th><th>Статус</th><th>Дней</th><th>Risk</th></tr>
-  {% for service, result in nearest %}
-  <tr class="status-{{ result.status|lower }}">
-    <td><a href="/certificates/{{ result.id }}">{{ service.host }}</a></td>
-    <td>{{ result.status }}</td>
-    <td>{{ result.days_left }}</td>
-    <td>{{ result.risk_score }}</td>
-  </tr>
-  {% endfor %}
-</table>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Хост</th>
+        <th>Сервис</th>
+        <th>Статус</th>
+        <th>Дней осталось</th>
+        <th>Risk Score</th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for service, result in nearest %}
+      <tr class="status-{{ result.status|lower }}">
+        <td><a href="/certificates/{{ result.id }}"><strong>{{ service.host }}</strong></a></td>
+        <td>{{ service.service_name or '—' }}</td>
+        <td>
+          <span class="badge badge-{{ result.status|lower }}">{{ result.status }}</span>
+        </td>
+        <td>
+          {% if result.days_left is not none %}
+            {% if result.days_left < 0 %}
+              <strong style="color: #dc2626;">{{ result.days_left }} дн. (истёк)</strong>
+            {% elif result.days_left <= 14 %}
+              <strong style="color: #ea580c;">{{ result.days_left }} дн.</strong>
+            {% else %}
+              {{ result.days_left }} дн.
+            {% endif %}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td><strong>{{ result.risk_score if result.risk_score is not none else '—' }}</strong></td>
+        <td><a href="/certificates/{{ result.id }}" class="btn-sm btn-outline">Карточка</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
 <p class="empty">Нет данных о сроке действия.</p>
 {% endif %}
-<h2>Требуют внимания</h2>
+
+<h2>Требуют внимания (Критические и высокие риски)</h2>
 {% if attention %}
-<table>
-  <tr><th>Сервис</th><th>Хост</th><th>Уровень</th><th>Risk</th><th>Статус</th></tr>
-  {% for service, result in attention %}
-  <tr class="status-{{ result.risk_level|lower }}">
-    <td>{{ service.service_name or '—' }}</td>
-    <td><a href="/certificates/{{ result.id }}">{{ service.host }}:{{ service.port }}</a></td>
-    <td>{{ result.risk_level }}</td>
-    <td>{{ result.risk_score }}</td>
-    <td>{{ result.status }}</td>
-  </tr>
-  {% endfor %}
-</table>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Сервис</th>
+        <th>Хост</th>
+        <th>Уровень риска</th>
+        <th>Risk Score</th>
+        <th>Статус</th>
+        <th>Владелец</th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for service, result in attention %}
+      <tr class="status-{{ result.risk_level|lower }}">
+        <td><strong>{{ service.service_name or '—' }}</strong></td>
+        <td><a href="/certificates/{{ result.id }}">{{ service.host }}:{{ service.port }}</a></td>
+        <td>
+          <span class="badge badge-{{ result.risk_level|lower }}">{{ result.risk_level }}</span>
+        </td>
+        <td><strong>{{ result.risk_score }}</strong></td>
+        <td>
+          <span class="badge badge-{{ result.status|lower }}">{{ result.status }}</span>
+        </td>
+        <td>{{ service.owner or 'Не назначен' }}</td>
+        <td><a href="/certificates/{{ result.id }}" class="btn-sm btn-outline">Подробнее</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
 <p class="empty">Критических и высоких рисков нет.</p>
 {% endif %}
+
+<div class="exports">
+  <span>Быстрый экспорт отчёта:</span>
+  <a href="/export?format=csv">Скачать CSV</a> • 
+  <a href="/export?format=xlsx">Скачать XLSX</a> • 
+  <a href="/export?format=html">Скачать HTML</a>
+</div>
 {% endif %}
 {% endblock %}

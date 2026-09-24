@@ -85,3 +85,18 @@ def test_api_settings_and_results_endpoints():
     )
     assert rejected.status_code == 400
     assert client.get("/api/export?format=csv").status_code == 200
+
+
+def test_dashboard_metrics_and_api():
+    client = TestClient(app)
+    dash_api = client.get("/api/dashboard")
+    assert dash_api.status_code == 200
+    payload = dash_api.json()
+    assert "health_score" in payload
+    assert "findings_summary" in payload
+    assert "reachable_count" in payload
+    assert "unreachable_count" in payload
+    assert "reachability_rate" in payload
+    root_html = client.get("/")
+    assert root_html.status_code == 200
+    assert "Обзор сертификатов" in root_html.text

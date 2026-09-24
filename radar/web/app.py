@@ -401,6 +401,11 @@ def api_dashboard():
         "statuses": data["cards"],
         "risks": data["risks"],
         "has_scan": data["has_scan"],
+        "health_score": data.get("health_score", 100),
+        "findings_summary": data.get("findings_summary", {}),
+        "reachable_count": data.get("reachable_count", data["total"]),
+        "unreachable_count": data.get("unreachable_count", 0),
+        "reachability_rate": data.get("reachability_rate", 100.0),
     }
 
 

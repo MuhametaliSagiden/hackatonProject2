@@ -173,6 +173,43 @@ def dashboard_data() -> dict[str, Any]:
     segments = [
         (name, cards[name], round(100 * cards[name] / total, 1) if total else 0.0) for name in STATUSES
     ]
+    reachable_count = sum(bool(result.reachable) for _, result in data)
+    unreachable_count = total - reachable_count
+    reachability_rate = round(100 * reachable_count / total, 1) if total else 0.0
+    if total:
+        avg_penalty = sum(result.risk_score or 60 for _, result in data) / total
+        health_score = max(0, min(100, round(100 - avg_penalty)))
+    else:
+        health_score = 100
+
+    findings_summary = {
+        "chain_errors": sum(
+            1
+            for _, r in data
+            if r.chain_status == "untrusted"
+            or any(isinstance(f, dict) and f.get("code") == "CHAIN_ERROR" for f in (r.findings or []))
+        ),
+        "hostname_mismatches": sum(
+            1
+            for _, r in data
+            if r.hostname_match is False
+            or any(isinstance(f, dict) and f.get("code") == "HOSTNAME_MISMATCH" for f in (r.findings or []))
+        ),
+        "weak_crypto": sum(
+            1
+            for _, r in data
+            if r.weak_crypto is True
+            or any(isinstance(f, dict) and f.get("code") in ("WEAK_KEY", "WEAK_SIGNATURE") for f in (r.findings or []))
+        ),
+        "self_signed": sum(
+            1
+            for _, r in data
+            if r.self_signed is True
+            or any(isinstance(f, dict) and f.get("code") == "SELF_SIGNED" for f in (r.findings or []))
+        ),
+        "no_owner": sum(1 for s, _ in data if not s.owner),
+    }
+
     return {
         "has_scan": scan is not None,
         "last_scan": scan,
@@ -182,6 +219,11 @@ def dashboard_data() -> dict[str, Any]:
         "attention": attention,
         "segments": segments,
         "total": total,
+        "health_score": health_score,
+        "findings_summary": findings_summary,
+        "reachable_count": reachable_count,
+        "unreachable_count": unreachable_count,
+        "reachability_rate": reachability_rate,
     }
 
 

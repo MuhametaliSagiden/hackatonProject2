@@ -5,6 +5,7 @@
 - Steps 7-17: web/API, background scans, scheduler, external notifications, launch scripts, local TLS lab and IIS setup (24.09.2026)
 - Steps 18-20: notification settings, filtered exports, E2E/API checks and demo artifacts (24.09.2026)
 - Post-release: Dashboard, фильтры, карточка с историей, JSON API 4.12 и тестовые уведомления из настроек (24.09.2026)
+- Dashboard & UI v2: Расчёт Health Score, сводка технических рисков (цепочки, mismatch, крипто, инвентарь), интерактивный прототип Generative UI, обновлённая сетка и стилизация (24.09.2026)
 
 ## Финальный чек-лист
 
