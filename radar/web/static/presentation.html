@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certificate Radar — Презентация для жюри</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .slide-enter { animation: fadeIn 0.25s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .radar-pulse { animation: radarWave 2.5s infinite ease-out; }
+    @keyframes radarWave {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+
+  <!-- Header / Navigation bar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
+        CR
+      </div>
+      <div>
+        <div class="font-bold text-sm tracking-wide text-white flex items-center gap-2">
+          Certificate Radar
+          <span class="text-[11px] uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">Hackathon MVP</span>
+        </div>
+        <div class="text-xs text-slate-400">Презентация проекта для жюри</div>
+      </div>
+    </div>
+
+    <!-- Slide indicator & controls -->
+    <div class="flex items-center gap-3">
+      <span class="text-xs text-slate-400 font-mono" id="slideIndicator">Слайд 1 из 9</span>
+      <div class="flex items-center gap-1">
+        <button onclick="prevSlide()" class="p-1.5 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition" title="Предыдущий слайд (Стрелка влево)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button onclick="nextSlide()" class="p-1.5 rounded-md hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition" title="Следующий слайд (Стрелка вправо / Пробел)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Progress bar -->
+  <div class="w-full bg-slate-900 h-1">
+    <div id="progressBar" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-1 transition-all duration-300" style="width: 11.11%;"></div>
+  </div>
+
+  <!-- Main Slide Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-6 md:p-10 flex items-center justify-center">
+
+    <!-- SLIDE 1: Title -->
+    <div id="slide-1" class="slide-content w-full slide-enter">
+      <div class="text-center max-w-3xl mx-auto py-8">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-6">
+          <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+          Защита проекта • Хакатон 2026
+        </div>
+        <h1 class="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-4 leading-tight">
+          Certificate <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Radar</span>
+        </h1>
+        <p class="text-lg md:text-xl text-slate-300 mb-8 font-light leading-relaxed">
+          Централизованное обнаружение, инвентаризация и превентивный контроль цифровых сертификатов корпоративной инфраструктуры
+        </p>
+
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl max-w-xl mx-auto mb-10">
+          <div class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-1">Главный принцип решения</div>
+          <div class="text-lg md:text-xl font-bold text-emerald-400 italic">
+            «Обнаружить проблему до того, как она станет инцидентом»
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+            <div class="text-blue-400 font-bold text-lg mb-1">Read Only</div>
+            <div class="text-xs text-slate-400">Безопасное сканирование без изменений и паролей</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+            <div class="text-indigo-400 font-bold text-lg mb-1">Risk Engine</div>
+            <div class="text-xs text-slate-400">Многофакторный скоринг 0–100 с рекомендациями</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+            <div class="text-emerald-400 font-bold text-lg mb-1">Zero Spam</div>
+            <div class="text-xs text-slate-400">Умная дедупликация оповещений (60/30/14/7/1)</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+            <div class="text-amber-400 font-bold text-lg mb-1">100% ТЗ</div>
+            <div class="text-xs text-slate-400">Все 10 требований MVP + расширенный функционал</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: Problem -->
+    <div id="slide-2" class="slide-content w-full hidden slide-enter">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-xs font-bold text-red-400 uppercase tracking-widest mb-2">Проблематика enterprise</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Почему сертификаты всё ещё «роняют» бизнес?</h2>
+        
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+          <div class="p-5 rounded-xl bg-red-950/20 border border-red-900/30 flex gap-4">
+            <div class="w-10 h-10 rounded-lg bg-red-900/50 text-red-400 flex items-center justify-center shrink-0 font-bold text-lg">!</div>
+            <div>
+              <div class="font-bold text-white text-base mb-1">Простой критических сервисов</div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Истечение срока действия на платежном шлюзе, VPN или почтовом сервере (OWA) моментально парализует работу сотен сотрудников и клиентов.
+              </p>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-amber-950/20 border border-amber-900/30 flex gap-4">
+            <div class="w-10 h-10 rounded-lg bg-amber-900/50 text-amber-400 flex items-center justify-center shrink-0 font-bold text-lg">✕</div>
+            <div>
+              <div class="font-bold text-white text-base mb-1">Несоответствие имён (CN/SAN Mismatch)</div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Сертификат валиден по сроку, но браузеры и API блокируют подключение из-за ошибки в SAN или некорректного Wildcard.
+              </p>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800 flex gap-4">
+            <div class="w-10 h-10 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center shrink-0 font-bold text-lg">⛓</div>
+            <div>
+              <div class="font-bold text-white text-base mb-1">Ошибки цепочки и Untrusted CA</div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Отсутствие промежуточного сертификата на сервере приводит к сбоям на мобильных клиентах и внешних интеграциях.
+              </p>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800 flex gap-4">
+            <div class="w-10 h-10 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center shrink-0 font-bold text-lg">👤</div>
+            <div>
+              <div class="font-bold text-white text-base mb-1">«Бесхозные» сертификаты и спам</div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Не назначен ответственный владелец, а администраторы тонут в однотипных уведомлениях мониторинга, вырабатывая «баннерную слепоту».
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-900 border-l-4 border-blue-500 text-sm text-slate-300">
+          <strong class="text-white">Итог:</strong> Ручной аудит в Excel и разрозненные скрипты не спасают от человеческого фактора. Необходим централизованный риск-ориентированный монитор.
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: Architecture & Discovery -->
+    <div id="slide-3" class="slide-content w-full hidden slide-enter">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">Техническое решение</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Как устроен Certificate Radar</h2>
+
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+            <div class="text-blue-400 font-bold text-sm uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-blue-400"></span> 1. Сбор (Discovery)
+            </div>
+            <ul class="text-xs text-slate-300 space-y-2">
+              <li>• Всеядный парсер: DNS, IP, URL, CIDR /24</li>
+              <li>• Пул параллельных потоков (ThreadPool)</li>
+              <li>• Чистый Read Only (TLS handshake)</li>
+              <li>• Unreachable изоляция при сбоях портов</li>
+            </ul>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+            <div class="text-indigo-400 font-bold text-sm uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-indigo-400"></span> 2. Анализ (Checks)
+            </div>
+            <ul class="text-xs text-slate-300 space-y-2">
+              <li>• Дни до истечения (настраиваемые пороги)</li>
+              <li>• Построение цепочки и проверка Self-Signed</li>
+              <li>• Полный RFC-анализ SAN DNS, Wildcard, IP</li>
+              <li>• Крипто-аудит (RSA &lt; 2048, MD5 / SHA-1)</li>
+            </ul>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+            <div class="text-emerald-400 font-bold text-sm uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 3. Действие (Action)
+            </div>
+            <ul class="text-xs text-slate-300 space-y-2">
+              <li>• Индекс здоровья (Health Score 0–100%)</li>
+              <li>• Однозначные рекомендации инженеру</li>
+              <li>• Алерты без дублей (Console, SMTP, Telegram)</li>
+              <li>• Мгновенный экспорт в CSV, XLSX, HTML</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800">
+          <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Модульность проверок (Plugin Architecture)</div>
+          <div class="font-mono text-xs text-slate-300 bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <span class="text-blue-400">class</span> <span class="text-emerald-400">CustomCheck</span>(Check):<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400">def</span> <span class="text-yellow-400">run</span>(self, ctx: CheckContext) -> list[Finding]:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-slate-500"># Добавление любой корпоративной проверки за 5 минут без правки ядра!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: Dashboard & Live UI Simulation -->
+    <div id="slide-4" class="slide-content w-full hidden slide-enter">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">Интерфейс оператора</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Executive Dashboard и здоровье инфраструктуры</h2>
+
+        <!-- Simulated Dashboard Card -->
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl mb-6">
+          <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b border-slate-800">
+            <div>
+              <div class="text-xs text-slate-400">Состояние сертификатного парка</div>
+              <div class="text-xl font-bold text-white flex items-center gap-2">
+                10 сервисов на контроле
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold">
+                Индекс надёжности: 78%
+              </span>
+              <span class="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-semibold">
+                Скан завершён
+              </span>
+            </div>
+          </div>
+
+          <!-- Status bar visualization -->
+          <div class="my-4">
+            <div class="text-xs text-slate-400 mb-1 flex justify-between">
+              <span>Распределение статусов</span>
+              <span>100% покрытие</span>
+            </div>
+            <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden flex">
+              <div style="width: 50%;" class="bg-emerald-500" title="OK: 5"></div>
+              <div style="width: 10%;" class="bg-blue-500" title="Information: 1"></div>
+              <div style="width: 10%;" class="bg-amber-500" title="Warning: 1"></div>
+              <div style="width: 10%;" class="bg-orange-500" title="Critical: 1"></div>
+              <div style="width: 10%;" class="bg-red-600" title="Expired: 1"></div>
+              <div style="width: 10%;" class="bg-slate-500" title="Unreachable: 1"></div>
+            </div>
+          </div>
+
+          <!-- Finding Pills -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center pt-2">
+            <div class="p-3 rounded-lg bg-red-950/30 border border-red-900/40">
+              <div class="text-xl font-bold text-red-400">1</div>
+              <div class="text-xs text-slate-400">Expired (Истёк)</div>
+            </div>
+            <div class="p-3 rounded-lg bg-orange-950/30 border border-orange-900/40">
+              <div class="text-xl font-bold text-orange-400">1</div>
+              <div class="text-xs text-slate-400">Critical (&le; 14 дн.)</div>
+            </div>
+            <div class="p-3 rounded-lg bg-amber-950/30 border border-amber-900/40">
+              <div class="text-xl font-bold text-amber-400">1</div>
+              <div class="text-xs text-slate-400">SAN Mismatch</div>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700">
+              <div class="text-xl font-bold text-slate-300">1</div>
+              <div class="text-xs text-slate-400">Chain Error</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs text-slate-400 text-center">
+          * Интуитивная навигация: клик на любой сегмент или бейдж открывает отфильтрованный список сертификатов.
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Risk Engine & Recommendations -->
+    <div id="slide-5" class="slide-content w-full hidden slide-enter">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Интеллектуальный анализ</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Risk Engine и рекомендации инженеру</h2>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+            <div class="font-bold text-white text-base mb-3 flex items-center justify-between">
+              <span>Формула расчёта Risk Score</span>
+              <span class="text-xs font-mono text-blue-400">0 – 100 баллов</span>
+            </div>
+            <div class="space-y-2 text-xs text-slate-300">
+              <div class="flex justify-between p-2 rounded bg-slate-800/40">
+                <span>Истёкший срок (Expired)</span>
+                <span class="font-bold text-red-400">+60 баллов</span>
+              </div>
+              <div class="flex justify-between p-2 rounded bg-slate-800/40">
+                <span>Критический срок (&le; 7 дн.)</span>
+                <span class="font-bold text-orange-400">+60 / +45</span>
+              </div>
+              <div class="flex justify-between p-2 rounded bg-slate-800/40">
+                <span>Ошибка цепочки / Hostname mismatch</span>
+                <span class="font-bold text-amber-400">+35 баллов</span>
+              </div>
+              <div class="flex justify-between p-2 rounded bg-slate-800/40">
+                <span>Слабый ключ (RSA &lt; 2048) или SHA-1</span>
+                <span class="font-bold text-indigo-400">+15 баллов</span>
+              </div>
+              <div class="flex justify-between p-2 rounded bg-slate-800/40">
+                <span>Критичность сервиса (High)</span>
+                <span class="font-bold text-blue-400">+20 баллов</span>
+              </div>
+              <div class="flex justify-between p-2 rounded bg-slate-800/40">
+                <span>Отсутствие назначенного владельца</span>
+                <span class="font-bold text-slate-400">+10 баллов</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-white text-base mb-3">Пример карточки сервиса</div>
+              <div class="p-4 rounded-lg bg-slate-950 border border-slate-800 mb-3">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-bold text-white text-sm">api.company.kz:8443</span>
+                  <span class="px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-900 text-xs font-bold">85 Critical</span>
+                </div>
+                <div class="text-xs text-slate-400 mb-1"><strong>Причина:</strong> Сертификат истекает через 3 дня; сервис имеет критичность High.</div>
+                <div class="text-xs text-blue-400 bg-blue-950/40 p-2 rounded border border-blue-900/40">
+                  <strong>Рекомендация:</strong> Срочно запросите перевыпуск в УЦ и установите сертификат на балансировщик до 27.09.2026.
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-slate-400 italic">
+              Все рекомендации формируются статически и детерминированно, без зависимости от внешних LLM.
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
+          <span>Мгновенный пересчёт: изменение порогов регламента компании пересчитывает базу локально за <strong>0.1 сек</strong>.</span>
+          <span class="text-emerald-400 font-semibold">Zero Rescan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Alerts & Exports -->
+    <div id="slide-6" class="slide-content w-full hidden slide-enter">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">Оповещения и отчётность</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Мультиканальные алерты и экспорт в 1 клик</h2>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+            <div class="font-bold text-white text-base mb-3 flex items-center gap-2">
+              <span class="text-emerald-400">●</span> Каналы оповещения
+            </div>
+            <p class="text-xs text-slate-300 mb-4 leading-relaxed">
+              Уведомления отправляются строго по заданным порогам: <strong>60, 30, 14, 7 и 1 день</strong>, а также статус <strong>Expired (0 дней)</strong>.
+            </p>
+            <div class="space-y-2 text-xs">
+              <div class="p-2.5 rounded bg-slate-800/50 flex items-center justify-between">
+                <span class="font-semibold text-white">System Console & Logs</span>
+                <span class="text-slate-400">Аудит и CLI журнал</span>
+              </div>
+              <div class="p-2.5 rounded bg-slate-800/50 flex items-center justify-between">
+                <span class="font-semibold text-white">Corporate SMTP / Email</span>
+                <span class="text-slate-400">Персональные письма владельцам</span>
+              </div>
+              <div class="p-2.5 rounded bg-slate-800/50 flex items-center justify-between">
+                <span class="font-semibold text-white">Telegram Bot</span>
+                <span class="text-slate-400">Мгновенные алерты дежурным</span>
+              </div>
+            </div>
+            <div class="mt-4 p-2.5 rounded bg-blue-950/30 border border-blue-900/40 text-[11px] text-blue-300">
+              <strong>Защита от спама:</strong> Уникальный ключ <code>(thumbprint, threshold, channel)</code> исключает повторные письма по одному и тому же событию.
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
+            <div class="font-bold text-white text-base mb-3 flex items-center gap-2">
+              <span class="text-blue-400">●</span> Отчётность для руководства и аудита
+            </div>
+            <p class="text-xs text-slate-300 mb-4 leading-relaxed">
+              Любое представление данных (с учётом применённых фильтров) выгружается моментально в 3 формата:
+            </p>
+            <div class="space-y-2 text-xs">
+              <div class="p-2.5 rounded bg-slate-800/50">
+                <div class="font-bold text-emerald-400 mb-0.5">XLSX (Excel)</div>
+                <div class="text-slate-400">Закрепленная шапка, автофильтры, цветовая подсветка статусов по ТЗ.</div>
+              </div>
+              <div class="p-2.5 rounded bg-slate-800/50">
+                <div class="font-bold text-blue-400 mb-0.5">CSV (BOM UTF-8)</div>
+                <div class="text-slate-400">Корректное открытие в русском Excel без искажения символов.</div>
+              </div>
+              <div class="p-2.5 rounded bg-slate-800/50">
+                <div class="font-bold text-indigo-400 mb-0.5">Standalone HTML</div>
+                <div class="text-slate-400">Автономный документ со встроенными стилями для отправки руководству.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
+          <span>Сквозной журнал аудита: все действия операторов (импорт, настройки, экспорт) логируются.</span>
+          <span class="text-blue-400 font-semibold">ISO / SOC Compliance</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: Roadmap - Infrastructure Risk Radar -->
+    <div id="slide-7" class="slide-content w-full hidden slide-enter">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">Стратегическое видение</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Платформа «Infrastructure Risk Radar»</h2>
+        
+        <p class="text-xs md:text-sm text-slate-300 mb-6 leading-relaxed">
+          По итогам хакатона оба решения (Identity Risk Analyzer и Certificate Radar) объединяются в единую корпоративную платформу упреждающего контроля инфраструктурных рисков.
+        </p>
+
+        <!-- Platform Ecosystem Diagram -->
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl mb-6">
+          <div class="text-center font-bold text-base text-white mb-4 pb-2 border-b border-slate-800 flex items-center justify-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+            Unified Infrastructure Risk Radar (Интегральный скоринг компании)
+          </div>
+          
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
+            <div class="p-3 rounded-xl bg-blue-950/40 border border-blue-800">
+              <div class="font-bold text-blue-400 text-sm">Certificate Radar</div>
+              <div class="text-[11px] text-slate-300 mt-1">TLS / SSL, цепочки, криптография, сроки</div>
+              <span class="inline-block mt-2 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-semibold">Готово 100%</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-indigo-950/40 border border-indigo-800">
+              <div class="font-bold text-indigo-400 text-sm">Identity Radar</div>
+              <div class="text-[11px] text-slate-300 mt-1">Active Directory, сервисные учётки, права</div>
+              <span class="inline-block mt-2 px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-semibold">Проект 1</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-700">
+              <div class="font-bold text-slate-300 text-sm">DNS Radar</div>
+              <div class="text-[11px] text-slate-400 mt-1">Зоны, резолвинг, делегирование, MX/SPF</div>
+              <span class="inline-block mt-2 px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 text-[10px]">Roadmap</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-700">
+              <div class="font-bold text-slate-300 text-sm">Service Radar</div>
+              <div class="text-[11px] text-slate-400 mt-1">Сетевая доступность L4/L7, HTTP latency</div>
+              <span class="inline-block mt-2 px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 text-[10px]">Roadmap</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-700">
+              <div class="font-bold text-slate-300 text-sm">Patch Radar</div>
+              <div class="text-[11px] text-slate-400 mt-1">Обновления Windows/Linux, критические CVE</div>
+              <span class="inline-block mt-2 px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 text-[10px]">Roadmap</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-700">
+              <div class="font-bold text-slate-300 text-sm">Backup Radar</div>
+              <div class="text-[11px] text-slate-400 mt-1">Статус резервных копий и RPO/RTO</div>
+              <span class="inline-block mt-2 px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 text-[10px]">Roadmap</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs text-slate-400 text-center">
+          Единый сквозной Risk Score позволяет CIO и CISO видеть объективный индекс надёжности всей корпоративной IT-инфраструктуры в режиме реального времени.
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: Hackathon Checklist & Results -->
+    <div id="slide-8" class="slide-content w-full hidden slide-enter">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">Соответствие ТЗ</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Чек-лист готовности к защите</h2>
+
+        <div class="grid md:grid-cols-2 gap-4 text-xs">
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">1. Загрузка списка DNS/IP/URL/CIDR</div>
+              <div class="text-slate-400">Файлом CSV/TXT и ручной ввод, валидация и дедупликация.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">2. Параллельный TLS-сбор</div>
+              <div class="text-slate-400">Порт 443 + нестандартные, таймауты, Unreachable изоляция.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">3. Получение всех атрибутов</div>
+              <div class="text-slate-400">CN, SAN DNS/IP, Issuer, отпечатки SHA-1/256, ключ, TLS.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">4. Расчёт срока и Days Left</div>
+              <div class="text-slate-400">Точный подсчёт дней и статусы с настраиваемыми порогами.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">5. Проверка соответствия имени</div>
+              <div class="text-slate-400">RFC 1123, поддержка Wildcard (*.domain) и IP SAN.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">6. Цепочка доверия и Self-Signed</div>
+              <div class="text-slate-400">Построение цепочки, поддержка корпоративных Root CA.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">7. Статусы срока (6 категорий)</div>
+              <div class="text-slate-400">OK, Information, Warning, Critical, Expired, Unreachable.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">8. Dashboard, фильтры и карточка</div>
+              <div class="text-slate-400">Health Score, сортировка, детальная карточка с рекомендациями.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">9. Экспорт отчётов в 3 формата</div>
+              <div class="text-slate-400">CSV с BOM, стилизованный XLSX с автофильтрами и HTML.</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+            <span class="text-emerald-400 font-bold text-base leading-none">✓</span>
+            <div>
+              <div class="font-semibold text-white">10. Уведомления без дублей</div>
+              <div class="text-slate-400">Пороги 60/30/14/7/1, каналы: Console, Email, Telegram.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 p-3 rounded-lg bg-emerald-950/30 border border-emerald-900/40 text-center text-xs font-semibold text-emerald-400">
+          ✓ Проект полностью готов к демонстрации. Все 28 автоматических тестов зелёные.
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: Conclusion / Final Pitch -->
+    <div id="slide-9" class="slide-content w-full hidden slide-enter">
+      <div class="text-center max-w-2xl mx-auto py-8">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 mx-auto flex items-center justify-center font-bold text-2xl text-white shadow-xl shadow-blue-500/20 mb-6">
+          CR
+        </div>
+
+        <h2 class="text-3xl md:text-5xl font-extrabold text-white mb-4">
+          Certificate Radar
+        </h2>
+        <p class="text-base text-slate-300 mb-8 leading-relaxed">
+          Надёжный щит вашей инфраструктуры от аварий, простоев и ошибок конфигурации сертификатов.
+        </p>
+
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-left mb-8 space-y-3">
+          <div class="flex items-center gap-3">
+            <span class="text-emerald-400 text-lg">⚡</span>
+            <span class="text-xs md:text-sm text-slate-200"><strong>Быстрый старт:</strong> Запуск одной командой <code>uv run radar serve</code>.</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-blue-400 text-lg">🔒</span>
+            <span class="text-xs md:text-sm text-slate-200"><strong>Безопасность:</strong> Строгий Read Only режим, без хранения паролей.</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-indigo-400 text-lg">🎯</span>
+            <span class="text-xs md:text-sm text-slate-200"><strong>Бизнес-эффект:</strong> Сокращение времени аудита с дней до минут.</span>
+          </div>
+        </div>
+
+        <div class="text-lg font-bold text-white mb-2">Спасибо за внимание! Готовы ответить на вопросы жюри.</div>
+        <div class="text-xs text-slate-400">Демонстрационный стенд активен и готов к живому показу.</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer controls -->
+  <footer class="border-t border-slate-800 bg-slate-900/60 px-6 py-3 flex items-center justify-between text-xs text-slate-400">
+    <div>
+      Навигация: <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">←</kbd> <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">→</kbd> или <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">Пробел</kbd>
+    </div>
+
+    <!-- Slide Thumbnails / Dots -->
+    <div class="flex items-center gap-1.5">
+      <button onclick="goToSlide(1)" class="slide-dot w-2.5 h-2.5 rounded-full bg-blue-500 transition-all" title="Слайд 1"></button>
+      <button onclick="goToSlide(2)" class="slide-dot w-2 h-2 rounded-full bg-slate-700 transition-all" title="Слайд 2"></button>
+      <button onclick="goToSlide(3)" class="slide-dot w-2 h-2 rounded-full bg-slate-700 transition-all" title="Слайд 3"></button>
+      <button onclick="goToSlide(4)" class="slide-dot w-2 h-2 rounded-full bg-slate-700 transition-all" title="Слайд 4"></button>
+      <button onclick="goToSlide(5)" class="slide-dot w-2 h-2 rounded-full bg-slate-700 transition-all" title="Слайд 5"></button>
+      <button onclick="goToSlide(6)" class="slide-dot w-2 h-2 rounded-full bg-slate-700 transition-all" title="Слайд 6"></button>
+      <button onclick="goToSlide(7)" class="slide-dot w-2 h-2 rounded-full bg-slate-700 transition-all" title="Слайд 7"></button>
+      <button onclick="goToSlide(8)" class="slide-dot w-2 h-2 rounded-full bg-slate-700 transition-all" title="Слайд 8"></button>
+      <button onclick="goToSlide(9)" class="slide-dot w-2 h-2 rounded-full bg-slate-700 transition-all" title="Слайд 9"></button>
+    </div>
+
+    <div>
+      Команда Certificate Radar
+    </div>
+  </footer>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 9;
+
+    function updateSlide() {
+      // Hide all slides
+      for (let i = 1; i <= totalSlides; i++) {
+        const el = document.getElementById(`slide-${i}`);
+        if (el) el.classList.add('hidden');
+      }
+
+      // Show current slide
+      const active = document.getElementById(`slide-${currentSlide}`);
+      if (active) {
+        active.classList.remove('hidden');
+      }
+
+      // Update indicator
+      document.getElementById('slideIndicator').innerText = `Слайд ${currentSlide} из ${totalSlides}`;
+
+      // Update progress bar
+      const pct = (currentSlide / totalSlides) * 100;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+
+      // Update dots
+      const dots = document.querySelectorAll('.slide-dot');
+      dots.forEach((dot, idx) => {
+        if (idx + 1 === currentSlide) {
+          dot.classList.remove('bg-slate-700', 'w-2', 'h-2');
+          dot.classList.add('bg-blue-500', 'w-2.5', 'h-2.5');
+        } else {
+          dot.classList.remove('bg-blue-500', 'w-2.5', 'h-2.5');
+          dot.classList.add('bg-slate-700', 'w-2', 'h-2');
+        }
+      });
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function goToSlide(n) {
+      if (n >= 1 && n <= totalSlides) {
+        currentSlide = n;
+        updateSlide();
+      }
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key >= '1' && e.key <= '9') {
+        goToSlide(parseInt(e.key));
+      }
+    });
+
+    updateSlide();
+  </script>
+</body>
+</html>

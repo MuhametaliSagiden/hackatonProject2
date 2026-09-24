@@ -6,6 +6,7 @@
 - Steps 18-20: notification settings, filtered exports, E2E/API checks and demo artifacts (24.09.2026)
 - Post-release: Dashboard, фильтры, карточка с историей, JSON API 4.12 и тестовые уведомления из настроек (24.09.2026)
 - Dashboard & UI v2: Расчёт Health Score, сводка технических рисков (цепочки, mismatch, крипто, инвентарь), интерактивный прототип Generative UI, обновлённая сетка и стилизация (24.09.2026)
+- Final Polish: UI/UX v2 для всех страниц (таблицы, бейджи, рекомендации, сканы, аудит), безопасный вывод на Windows, авто-генерация radar_demo_seed.db, интерактивная презентация для жюри и финализация DEMO.md (24.09.2026)
 
 ## Финальный чек-лист
 
