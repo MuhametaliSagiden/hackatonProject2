@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULTS = {"thresholds": {"info_days": 60, "warning_days": 30, "critical_days": 14}, "notify_thresholds": [60, 30, 14, 7, 1], "scan": {"timeout_sec": 5, "workers": 32, "max_cidr_hosts": 256}, "dns_overrides": {}, "trust": {"extra_ca_files": []}}
+DEFAULTS = {"thresholds": {"info_days": 60, "warning_days": 30, "critical_days": 14}, "notify_thresholds": [60, 30, 14, 7, 1], "scan": {"timeout_sec": 5, "workers": 32, "max_cidr_hosts": 256, "schedule_hours": 0}, "dns_overrides": {}, "trust": {"extra_ca_files": []}, "notify": {"email_enabled": False, "smtp_host": "", "smtp_port": 25, "smtp_from": "radar@localhost", "email_to": [], "telegram_enabled": False}}
 
 def load_config(path: Path | None = None) -> dict:
     value = DEFAULTS.copy()

@@ -21,7 +21,7 @@ _scheduler = None
 async def lifespan(app):
     global _scheduler
     if _scheduler is None:
-        _scheduler=start_scheduler(load_config().get("scan",{}).get("schedule_hours",0))
+        db=session(); saved=db.get(Setting,"schedule_hours"); db.close(); hours=int(saved.value) if saved else load_config().get("scan",{}).get("schedule_hours",0); _scheduler=start_scheduler(hours)
     yield
     if _scheduler: _scheduler.shutdown(wait=False); _scheduler=None
 
@@ -97,15 +97,18 @@ def notification_test(): return send_test()
 
 @app.get("/settings", response_class=HTMLResponse)
 def settings_page():
-    db=session(); values={x.key:x.value for x in db.exec(select(Setting))}; db.close(); return f"<h1>Настройки</h1><form method='post'><label>Информационный порог <input name='info_days' value='{values.get('info_days','60')}'></label><label>Предупреждение <input name='warning_days' value='{values.get('warning_days','30')}'></label><label>Критический <input name='critical_days' value='{values.get('critical_days','14')}'></label><button>Сохранить</button></form>"
+    db=session(); values={x.key:x.value for x in db.exec(select(Setting))}; db.close(); return f"<h1>Настройки</h1><form method='post'><label>Информационный порог <input name='info_days' value='{values.get('info_days','60')}'></label><label>Предупреждение <input name='warning_days' value='{values.get('warning_days','30')}'></label><label>Критический <input name='critical_days' value='{values.get('critical_days','14')}'></label><label>Пороги уведомлений <input name='notify_thresholds' value='{values.get('notify_thresholds','60,30,14,7,1')}'></label><label>Интервал расписания, часов <input name='schedule_hours' value='{values.get('schedule_hours','0')}'></label><button>Сохранить</button></form>"
 
 @app.post("/settings", response_class=HTMLResponse)
-def save_settings(info_days: int = Form(...), warning_days: int = Form(...), critical_days: int = Form(...)):
+def save_settings(info_days: int = Form(...), warning_days: int = Form(...), critical_days: int = Form(...), notify_thresholds: str = Form("60,30,14,7,1"), schedule_hours: int = Form(0)):
     if not info_days > warning_days > critical_days >= 0: return HTMLResponse("Ошибка: требуется info > warning > critical >= 0", status_code=400)
+    try: parsed=sorted({int(x.strip()) for x in notify_thresholds.split(",") if x.strip()},reverse=True)
+    except ValueError: return HTMLResponse("Ошибка: пороги уведомлений должны быть числами",status_code=400)
+    if not parsed or min(parsed) < 0 or schedule_hours < 0: return HTMLResponse("Ошибка: значения должны быть неотрицательными",status_code=400)
     db=session()
-    for key,value in {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}.items():
+    for key,value in {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days,"notify_thresholds":",".join(map(str,parsed)),"schedule_hours":schedule_hours}.items():
         item=db.get(Setting,key) or Setting(key=key); item.value=str(value); db.add(item)
-    db.commit(); db.close(); recompute_latest(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}); return "<p>Настройки сохранены и результаты пересчитаны</p><a href='/settings'>Назад</a>"
+    db.commit(); db.close(); recompute_latest(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days,"notify_thresholds":parsed,"schedule_hours":schedule_hours}); return "<p>Настройки сохранены и результаты пересчитаны. Новое расписание применяется после перезапуска.</p><a href='/settings'>Назад</a>"
 
 @app.get("/scans", response_class=HTMLResponse)
 def scans():
