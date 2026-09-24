@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Результат импорта</h1>
+<div class="panel">
+  <p>Добавлено: {{ report.added }}; Обновлено: {{ report.updated }}; Дубликаты: {{ report.duplicates }}; Ошибки: {{ report.invalid|length }}</p>
+  {% if report.invalid %}
+  <h2>Ошибочные строки</h2>
+  <ul>
+    {% for line_no, raw_text, reason in report.invalid %}
+    <li>Строка {{ line_no }}: «{{ raw_text }}» — {{ reason }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <a href="/targets">Вернуться к целям</a>
+</div>
+{% endblock %}

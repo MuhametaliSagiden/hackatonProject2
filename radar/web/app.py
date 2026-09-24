@@ -50,16 +50,14 @@ def targets_page(request: Request):
     return templates.TemplateResponse(request,"targets.html",{"items":items})
 
 @app.post("/targets/import", response_class=HTMLResponse)
-def targets_import(target_text: str = Form(...)):
+def targets_import(request: Request, target_text: str = Form(...)):
     report=import_targets(target_text.encode("utf-8"), "targets.txt")
-    errors="; ".join(f"строка {x[0]}: {x[2]}" for x in report.invalid)
-    return f"<p>Добавлено: {report.added}; Обновлено: {report.updated}; Дубликаты: {report.duplicates}; Ошибки: {len(report.invalid)}</p><p>{errors}</p><a href='/targets'>Назад</a>"
+    return templates.TemplateResponse(request, "import_result.html", {"report": report})
 
 @app.post("/targets/upload", response_class=HTMLResponse)
-async def targets_upload(file: UploadFile = File(...)):
+async def targets_upload(request: Request, file: UploadFile = File(...)):
     report=import_targets(await file.read(),file.filename or "targets.txt")
-    errors="; ".join(f"строка {x[0]}: {x[2]}" for x in report.invalid)
-    return f"<p>Добавлено: {report.added}; Обновлено: {report.updated}; Дубликаты: {report.duplicates}; Ошибки: {len(report.invalid)}</p><p>{errors}</p><a href='/targets'>Назад</a>"
+    return templates.TemplateResponse(request, "import_result.html", {"report": report})
 
 @app.post("/targets/{service_id}")
 def update_target(service_id: int, owner: str = Form(""), criticality: str = Form("medium")):
@@ -125,15 +123,38 @@ def settings_page(request: Request):
     db=session(); values={x.key:x.value for x in db.exec(select(Setting))}; db.close(); return templates.TemplateResponse(request,"settings.html",{"values":values})
 
 @app.post("/settings", response_class=HTMLResponse)
-def save_settings(info_days: int = Form(...), warning_days: int = Form(...), critical_days: int = Form(...), notify_thresholds: str = Form("60,30,14,7,1"), schedule_hours: int = Form(0)):
-    if not info_days > warning_days > critical_days >= 0: return HTMLResponse("Ошибка: требуется info > warning > critical >= 0", status_code=400)
+def save_settings(request: Request, info_days: int = Form(...), warning_days: int = Form(...), critical_days: int = Form(...), notify_thresholds: str = Form("60,30,14,7,1"), schedule_hours: int = Form(0)):
+    db = session()
+    values = {x.key: x.value for x in db.exec(select(Setting))}
+    db.close()
+    if not info_days > warning_days > critical_days >= 0:
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {"values": values, "error": "Ошибка: требуется info > warning > critical >= 0"},
+            status_code=400,
+        )
     try: parsed=sorted({int(x.strip()) for x in notify_thresholds.split(",") if x.strip()},reverse=True)
-    except ValueError: return HTMLResponse("Ошибка: пороги уведомлений должны быть числами",status_code=400)
-    if not parsed or min(parsed) < 0 or schedule_hours < 0: return HTMLResponse("Ошибка: значения должны быть неотрицательными",status_code=400)
+    except ValueError:
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {"values": values, "error": "Ошибка: пороги уведомлений должны быть числами"},
+            status_code=400,
+        )
+    if not parsed or min(parsed) < 0 or schedule_hours < 0:
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {"values": values, "error": "Ошибка: значения должны быть неотрицательными"},
+            status_code=400,
+        )
     db=session()
     for key,value in {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days,"notify_thresholds":",".join(map(str,parsed)),"schedule_hours":schedule_hours}.items():
         item=db.get(Setting,key) or Setting(key=key); item.value=str(value); db.add(item)
-    db.commit(); db.close(); recompute_latest(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days,"notify_thresholds":parsed,"schedule_hours":schedule_hours}); return "<p>Настройки сохранены и результаты пересчитаны. Новое расписание применяется после перезапуска.</p><a href='/settings'>Назад</a>"
+    db.commit(); db.close(); recompute_latest(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days,"notify_thresholds":parsed,"schedule_hours":schedule_hours})
+    db=session(); values={x.key:x.value for x in db.exec(select(Setting))}; db.close()
+    return templates.TemplateResponse(request, "settings.html", {"values": values, "message": "Настройки сохранены и результаты пересчитаны. Новое расписание применяется после перезапуска."})
 
 @app.get("/scans", response_class=HTMLResponse)
 def scans(request: Request):

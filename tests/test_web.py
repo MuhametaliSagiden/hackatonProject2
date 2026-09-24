@@ -21,3 +21,21 @@ def test_file_upload_and_missing_scan_page():
     assert saved["owner"] == "new-owner@example"
     assert saved["criticality"] == "high"
     assert client.get("/scans/999999999").status_code == 404
+
+def test_import_and_settings_use_jinja_pages():
+    client=TestClient(app)
+    imported=client.post("/targets/import",data={"target_text":"valid.example\nvalid.example\nnot a host!!"})
+    assert imported.status_code == 200
+    assert "Результат импорта" in imported.text
+    assert "<a href='/targets'>" not in imported.text
+
+    saved=client.post("/settings",data={
+        "info_days":60,
+        "warning_days":30,
+        "critical_days":14,
+        "notify_thresholds":"60,30,14,7,1",
+        "schedule_hours":0,
+    })
+    assert saved.status_code == 200
+    assert "Настройки сохранены" in saved.text
+    assert "<p>Настройки сохранены" not in saved.text
