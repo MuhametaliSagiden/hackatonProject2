@@ -87,11 +87,11 @@ def certificates(request: Request, status: str | None = None, q: str | None = No
     return templates.TemplateResponse(request,"certificates.html",{"rows":data,"status":status or "","q":q or ""})
 
 @app.get("/certificates/{result_id}", response_class=HTMLResponse)
-def certificate(result_id: int):
+def certificate(request: Request, result_id: int):
     db=session(); result=db.get(CertResult,result_id); service=db.get(Service,result.service_id) if result else None; db.close()
     if not result: return HTMLResponse("Не найдено", status_code=404)
-    findings=json.loads(result.findings or "[]"); items="".join(f"<li>{x.get('reason') or x['code']} — {x.get('recommendation','')}</li>" for x in findings)
-    return f"<h1>{service.host}</h1><p>Статус: {result.status}; Risk: {result.risk_score or 'N/A'} ({result.risk_level})</p><p>CN: {result.subject_cn or ''}; Issuer: {result.issuer_cn or ''}</p><ul>{items}</ul>"
+    findings=json.loads(result.findings or "[]")
+    return templates.TemplateResponse(request,"certificate.html",{"service":service,"result":result,"findings":findings,"san_dns":json.loads(result.san_dns),"san_ip":json.loads(result.san_ip)})
 
 @app.get("/export")
 def export(format: str = Query("csv"), status: str | None = None, q: str | None = None, owner: str | None = None, issuer: str | None = None):
@@ -101,19 +101,19 @@ def export(format: str = Query("csv"), status: str | None = None, q: str | None 
     return Response(export_csv(data), media_type="text/csv; charset=utf-8", headers={"Content-Disposition":"attachment; filename=certificates.csv"})
 
 @app.get("/audit", response_class=HTMLResponse)
-def audit_page():
-    db=session(); logs=list(db.exec(select(AuditLog).order_by(AuditLog.id.desc()).limit(500))); db.close(); return "<h1>Аудит</h1><pre>"+"\n".join(f"{x.ts} {x.action} {x.details}" for x in logs)+"</pre>"
+def audit_page(request: Request):
+    db=session(); logs=list(db.exec(select(AuditLog).order_by(AuditLog.id.desc()).limit(500))); db.close(); return templates.TemplateResponse(request,"audit.html",{"logs":logs})
 
 @app.get("/notifications", response_class=HTMLResponse)
-def notifications():
-    db=session(); logs=list(db.exec(select(NotificationLog).order_by(NotificationLog.id.desc()).limit(500))); db.close(); return "<h1>Уведомления</h1><pre>"+"\n".join(f"{x.sent_at} {x.channel} threshold={x.threshold} {x.message}" for x in logs)+"</pre>"
+def notifications(request: Request):
+    db=session(); logs=list(db.exec(select(NotificationLog).order_by(NotificationLog.id.desc()).limit(500))); db.close(); return templates.TemplateResponse(request,"notifications.html",{"logs":logs})
 
 @app.post("/api/notifications/test")
 def notification_test(): return send_test()
 
 @app.get("/settings", response_class=HTMLResponse)
-def settings_page():
-    db=session(); values={x.key:x.value for x in db.exec(select(Setting))}; db.close(); return f"<h1>Настройки</h1><form method='post'><label>Информационный порог <input name='info_days' value='{values.get('info_days','60')}'></label><label>Предупреждение <input name='warning_days' value='{values.get('warning_days','30')}'></label><label>Критический <input name='critical_days' value='{values.get('critical_days','14')}'></label><label>Пороги уведомлений <input name='notify_thresholds' value='{values.get('notify_thresholds','60,30,14,7,1')}'></label><label>Интервал расписания, часов <input name='schedule_hours' value='{values.get('schedule_hours','0')}'></label><button>Сохранить</button></form>"
+def settings_page(request: Request):
+    db=session(); values={x.key:x.value for x in db.exec(select(Setting))}; db.close(); return templates.TemplateResponse(request,"settings.html",{"values":values})
 
 @app.post("/settings", response_class=HTMLResponse)
 def save_settings(info_days: int = Form(...), warning_days: int = Form(...), critical_days: int = Form(...), notify_thresholds: str = Form("60,30,14,7,1"), schedule_hours: int = Form(0)):
@@ -127,16 +127,14 @@ def save_settings(info_days: int = Form(...), warning_days: int = Form(...), cri
     db.commit(); db.close(); recompute_latest(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days,"notify_thresholds":parsed,"schedule_hours":schedule_hours}); return "<p>Настройки сохранены и результаты пересчитаны. Новое расписание применяется после перезапуска.</p><a href='/settings'>Назад</a>"
 
 @app.get("/scans", response_class=HTMLResponse)
-def scans():
-    db=session(); items=list(db.exec(select(Scan).order_by(Scan.id.desc()))); db.close(); body="".join(f"<tr><td><a href='/scans/{x.id}'>{x.id}</a></td><td>{x.started_at}</td><td>{x.status}</td><td>{x.processed}/{x.total}</td></tr>" for x in items)
-    return f"<h1>История сканов</h1><table><tr><th>ID</th><th>Начало</th><th>Статус</th><th>Обработано</th></tr>{body}</table>"
+def scans(request: Request):
+    db=session(); items=list(db.exec(select(Scan).order_by(Scan.id.desc()))); db.close(); return templates.TemplateResponse(request,"scans.html",{"items":items})
 
 @app.get("/scans/{scan_id}", response_class=HTMLResponse)
-def scan_page(scan_id: int):
+def scan_page(request: Request, scan_id: int):
     db=session(); item=db.get(Scan,scan_id); db.close()
     if not item: return HTMLResponse("Скан не найден",status_code=404)
-    refresh='<meta http-equiv="refresh" content="2">' if item.status == "running" else ""
-    return f"{refresh}<h1>Скан #{item.id}</h1><p>Статус: {item.status}</p><p>Обработано: {item.processed}/{item.total}</p><a href='/scans'>История</a>"
+    return templates.TemplateResponse(request,"scan.html",{"item":item})
 
 @app.get("/api/scans")
 def api_scans():
