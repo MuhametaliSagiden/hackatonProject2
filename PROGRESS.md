@@ -22,4 +22,7 @@
 - [x] Read-only режим и модульные проверки.
 - [x] Изолированная тестовая SQLite-БД и нагрузочная проверка 256 недоступных целей.
 - [x] Сквозной изолированный E2E: импорт, скан, Dashboard, фильтр, карточка, экспорт и уведомление.
-- [ ] PowerShell parser и IIS-стенд: нужен Windows Server/pwsh; в текущем окружении `pwsh` отсутствует.
+- [x] IIS-стенд на Windows Server VM: 12 RadarLab HTTPS/SNI сайтов, firewall rule и реальный TLS scan 13 целей.
+- [x] Реальный IIS scan: 13/13 обработано, `dead.lab.local` получил `Unreachable`, проверены Expired/Critical/Warning,
+  hostname mismatch, weak key и chain error.
+- [ ] PowerShell parser check: отдельный `pwsh` не установлен; setup script фактически выполнен Windows PowerShell на VM.

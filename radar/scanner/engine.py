@@ -67,6 +67,21 @@ def run_scan(scan_id: int | None = None, triggered_by: str = "cli") -> Scan:
             return srv, res
 
         processed_count = 0
+        pending_results: list[CertResult] = []
+
+        def persist_batch() -> None:
+            nonlocal pending_results
+            if not pending_results:
+                return
+            with session() as db:
+                db.add_all(pending_results)
+                curr_scan = db.get(Scan, actual_scan_id)
+                if curr_scan:
+                    curr_scan.processed += len(pending_results)
+                    db.add(curr_scan)
+                db.commit()
+            pending_results = []
+
         try:
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = {pool.submit(process_target, s): s for s in services}
@@ -123,15 +138,12 @@ def run_scan(scan_id: int | None = None, triggered_by: str = "cli") -> Scan:
                         findings=findings_data,
                     )
 
-                    with session() as db:
-                        db.add(cert_result)
-                        curr_scan = db.get(Scan, actual_scan_id)
-                        if curr_scan:
-                            curr_scan.processed += 1
-                            db.add(curr_scan)
-                        db.commit()
-
+                    pending_results.append(cert_result)
                     processed_count += 1
+                    if len(pending_results) >= 16:
+                        persist_batch()
+
+            persist_batch()
 
             with session() as db:
                 curr_scan = db.get(Scan, actual_scan_id)
