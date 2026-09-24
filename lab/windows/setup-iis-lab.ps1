@@ -24,6 +24,6 @@ Get-ChildItem -LiteralPath $resolvedCerts -Filter "*.pfx" | ForEach-Object {
     $targets += "$hostName,$siteName,,medium"
 }
 New-NetFirewallRule -DisplayName "Certificate Radar HTTPS" -Direction Inbound -Protocol TCP -LocalPort 443 -Action Allow -ErrorAction SilentlyContinue | Out-Null
-$targets += "dead.lab.local,Недоступный сервис,,medium"
+$targets += "dead.lab.local,Unreachable service,,medium"
 $targets | Set-Content -LiteralPath (Join-Path $PSScriptRoot "targets_windows.csv") -Encoding UTF8
 Write-Host "Certificate Radar IIS lab configured."
