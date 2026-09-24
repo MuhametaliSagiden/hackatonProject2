@@ -5,6 +5,7 @@ from .telegram import TelegramChannel
 from sqlmodel import select
 from ..db import session
 from ..models import CertResult, NotificationLog, Service
+from ..audit import audit
 
 def notify_after_scan(scan_id, thresholds=(60, 30, 14, 7, 1)):
     db=session(); results=list(db.exec(select(CertResult).where(CertResult.scan_id == scan_id))); services={s.id:s for s in db.exec(select(Service))}; sent=0
@@ -17,7 +18,9 @@ def notify_after_scan(scan_id, thresholds=(60, 30, 14, 7, 1)):
         message=(f"Certificate Radar: сертификат {service.host}:{service.port} истёк {abs(result.days_left)} дн. назад" if threshold == 0 else f"Certificate Radar: сертификат {service.host}:{service.port} истекает через {result.days_left} дн.")
         message += f" Risk {result.risk_score} ({result.risk_level}). Владелец: {service.owner or 'не назначен'}."
         logging.getLogger("radar").warning(message); db.add(NotificationLog(service_id=service.id, thumbprint_sha1=result.thumbprint_sha1, threshold=threshold, channel="console", message=message)); sent += 1
-    db.commit(); db.close(); return sent
+    db.commit(); db.close()
+    if sent: audit("NOTIFICATION_SENT", {"scan_id":scan_id,"count":sent,"channel":"console"})
+    return sent
 
 def send_test(channels=None):
     channels=channels or ["console"]; message="Certificate Radar: тестовое уведомление"; results={"console": True}
@@ -27,4 +30,4 @@ def send_test(channels=None):
     if "telegram" in channels and os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID"):
         try: results["telegram"]=TelegramChannel(os.getenv("TELEGRAM_BOT_TOKEN"), os.getenv("TELEGRAM_CHAT_ID")).send(message)
         except Exception as exc: logging.getLogger("radar").error("Ошибка Telegram: %s", exc); results["telegram"]=False
-    return results
+    audit("NOTIFICATION_TEST", results); return results
