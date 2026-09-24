@@ -1,5 +1,5 @@
 import json
-from fastapi import FastAPI, File, UploadFile, Query
+from fastapi import FastAPI, File, UploadFile, Query, Form
 from fastapi.responses import HTMLResponse, Response
 from sqlmodel import select
 from ..audit import audit
@@ -7,7 +7,7 @@ from ..db import session
 from ..export.csv_export import export_csv
 from ..export.html_export import export_html
 from ..export.xlsx_export import export_xlsx
-from ..models import AuditLog, CertResult, Service
+from ..models import AuditLog, CertResult, Service, NotificationLog, Setting
 from ..services import import_targets, run_scan
 
 app = FastAPI(title="Certificate Radar")
@@ -54,3 +54,19 @@ def export(format: str = Query("csv")):
 @app.get("/audit", response_class=HTMLResponse)
 def audit_page():
     db=session(); logs=list(db.exec(select(AuditLog).order_by(AuditLog.id.desc()).limit(500))); db.close(); return "<h1>Аудит</h1><pre>"+"\n".join(f"{x.ts} {x.action} {x.details}" for x in logs)+"</pre>"
+
+@app.get("/notifications", response_class=HTMLResponse)
+def notifications():
+    db=session(); logs=list(db.exec(select(NotificationLog).order_by(NotificationLog.id.desc()).limit(500))); db.close(); return "<h1>Уведомления</h1><pre>"+"\n".join(f"{x.sent_at} {x.channel} threshold={x.threshold} {x.message}" for x in logs)+"</pre>"
+
+@app.get("/settings", response_class=HTMLResponse)
+def settings_page():
+    db=session(); values={x.key:x.value for x in db.exec(select(Setting))}; db.close(); return f"<h1>Настройки</h1><form method='post'><label>Информационный порог <input name='info_days' value='{values.get('info_days','60')}'></label><label>Предупреждение <input name='warning_days' value='{values.get('warning_days','30')}'></label><label>Критический <input name='critical_days' value='{values.get('critical_days','14')}'></label><button>Сохранить</button></form>"
+
+@app.post("/settings", response_class=HTMLResponse)
+def save_settings(info_days: int = Form(...), warning_days: int = Form(...), critical_days: int = Form(...)):
+    if not info_days > warning_days > critical_days >= 0: return HTMLResponse("Ошибка: требуется info > warning > critical >= 0", status_code=400)
+    db=session()
+    for key,value in {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}.items():
+        item=db.get(Setting,key) or Setting(key=key); item.value=str(value); db.add(item)
+    db.commit(); db.close(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}); return "<p>Настройки сохранены</p><a href='/settings'>Назад</a>"

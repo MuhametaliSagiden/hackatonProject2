@@ -11,6 +11,7 @@ from .models import CertResult, Scan, Service
 from .scanner.tls import grab
 from .targets.parser import parse_file
 from .audit import audit
+from .notify.service import notify_after_scan
 
 
 def import_targets(data, filename):
@@ -33,4 +34,4 @@ def run_scan(triggered_by="cli"):
         for future in as_completed(futures):
             service, raw = future.result()
             result=analyze(raw, service, cfg["thresholds"]); db.add(CertResult(scan_id=scan.id, service_id=service.id, reachable=raw.reachable, error=raw.error, resolved_ip=raw.resolved_ip, leaf_pem=raw.leaf_pem, subject_cn=raw.subject_cn, san_dns=json.dumps(raw.san_dns or []), san_ip=json.dumps(raw.san_ip or []), issuer_cn=raw.issuer_cn, issuer_full=raw.issuer_full, serial=raw.serial, thumbprint_sha1=raw.thumbprint_sha1, thumbprint_sha256=raw.thumbprint_sha256, not_before=raw.not_before, not_after=raw.not_after, key_type=raw.key_type, key_size=raw.key_size, sig_hash=raw.sig_hash, tls_version=raw.tls_version, days_left=result["days_left"], status=result["status"], risk_score=result["risk_score"], risk_level=result["risk_level"], findings=json.dumps([f.__dict__ for f in result["findings"]], ensure_ascii=False))); scan.processed += 1
-    scan.status="done"; scan.finished_at=datetime.now(UTC); db.add(scan); db.commit(); db.close(); audit("SCAN_FINISHED", {"scan_id": scan.id, "processed": scan.processed}); return scan
+    scan.status="done"; scan.finished_at=datetime.now(UTC); db.add(scan); db.commit(); db.close(); notify_after_scan(scan.id); audit("SCAN_FINISHED", {"scan_id": scan.id, "processed": scan.processed}); return scan

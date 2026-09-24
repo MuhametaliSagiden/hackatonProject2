@@ -73,3 +73,7 @@ class AuditLog(SQLModel, table=True):
     actor: str = "local-user"
     action: str
     details: str = "{}"
+
+class Setting(SQLModel, table=True):
+    key: str = Field(primary_key=True)
+    value: str = ""
