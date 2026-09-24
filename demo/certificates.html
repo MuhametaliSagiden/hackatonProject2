@@ -1,1 +1,93 @@
-<!doctype html><meta charset='utf-8'><h1>Certificate Radar</h1><table><tr><th>Хост</th><th>Статус</th><th>Дни</th><th>Risk</th></tr><tr><td>warning.lab.local</td><td>Warning</td><td>19</td><td>75</td></tr><tr><td>expiring.lab.local</td><td>Critical</td><td>4</td><td>100</td></tr><tr><td>expired.lab.local</td><td>Expired</td><td>-2</td><td>100</td></tr><tr><td>valid.lab.local</td><td>OK</td><td>364</td><td>55</td></tr><tr><td>information.lab.local</td><td>Information</td><td>49</td><td>45</td></tr><tr><td>mismatch.lab.local</td><td>OK</td><td>364</td><td>80</td></tr><tr><td>app.wild.lab.local</td><td>OK</td><td>364</td><td>35</td></tr><tr><td>chain.lab.local</td><td>OK</td><td>364</td><td>35</td></tr><tr><td>selfsigned.lab.local</td><td>OK</td><td>364</td><td>50</td></tr><tr><td>dead.lab.local</td><td>Unreachable</td><td></td><td></td></tr></table>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Certificate Radar — Экспорт</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 20px;
+      color: #333;
+      background: #f8f9fa;
+    }
+    h1 {
+      margin-bottom: 5px;
+      color: #1a253c;
+    }
+    .meta {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
+    .summary-grid {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+    .summary-card {
+      background: #fff;
+      padding: 10px 20px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      min-width: 110px;
+    }
+    .summary-title {
+      font-size: 0.85rem;
+      color: #777;
+    }
+    .summary-count {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #222;
+    }
+    .table-container {
+      overflow-x: auto;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    th {
+      background: #1a253c;
+      color: #fff;
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 600;
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e9ecef;
+    }
+    tr:hover td {
+      background: #f1f3f5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Certificate Radar — Отчёт по сертификатам</h1>
+  <div class="meta">Дата формирования: 24.09.2026 11:25 UTC | Всего объектов: 10</div>
+  
+  <div class="summary-grid">
+    <div class="summary-card" style="border-left: 4px solid #28a745"><span class="summary-title">OK</span><span class="summary-count">5</span></div><div class="summary-card" style="border-left: 4px solid #17a2b8"><span class="summary-title">Information</span><span class="summary-count">1</span></div><div class="summary-card" style="border-left: 4px solid #ffc107"><span class="summary-title">Warning</span><span class="summary-count">1</span></div><div class="summary-card" style="border-left: 4px solid #fd7e14"><span class="summary-title">Critical</span><span class="summary-count">1</span></div><div class="summary-card" style="border-left: 4px solid #dc3545"><span class="summary-title">Expired</span><span class="summary-count">1</span></div><div class="summary-card" style="border-left: 4px solid #6c757d"><span class="summary-title">Unreachable</span><span class="summary-count">1</span></div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr><th>Сервис</th><th>Хост</th><th>Порт</th><th>Владелец</th><th>Критичность</th><th>CN</th><th>SAN</th><th>Issuer</th><th>Thumbprint (SHA-1)</th><th>Действует с</th><th>Действует до</th><th>Дней осталось</th><th>Статус</th><th>Цепочка</th><th>Имя совпадает</th><th>Self-signed</th><th>Ключ</th><th>Подпись</th><th>Risk Score</th><th>Уровень риска</th><th>Проблемы</th><th>Рекомендации</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>HR-портал</td><td>chain.lab.local</td><td>8443</td><td>hr@lab.local</td><td>medium</td><td>chain.lab.local</td><td>chain.lab.local</td><td>Radar Lab Rogue CA</td><td>4C6AC2BC9834EE5D94FA3B7E66CAC9D1B9CD6CD7</td><td>25.08.2026</td><td>24.09.2027</td><td>365</td><td><strong style="color: #28a745">OK</strong></td><td>untrusted</td><td>Да</td><td>Нет</td><td>RSA 2048</td><td>sha256</td><td>45</td><td>Medium</td><td>Ошибка цепочки доверия: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1010)</td><td>Установите на сервере полную цепочку (промежуточные сертификаты) или используйте сертификат доверенного центра сертификации.</td></tr><tr><td>VPN</td><td>warning.lab.local</td><td>8443</td><td></td><td>high</td><td>warning.lab.local</td><td>warning.lab.local</td><td>Radar Lab Intermediate CA</td><td>4FC0C98A3B270C852D71C53FA08BA5F7F1F0C465</td><td>24.09.2025</td><td>19.10.2026</td><td>25</td><td><strong style="color: #ffc107">Warning</strong></td><td>untrusted</td><td>Да</td><td>Нет</td><td>RSA 2048</td><td>sha256</td><td>95</td><td>Critical</td><td>Сертификат истекает через 25 дн.; Ошибка цепочки доверия: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate signature failure (_ssl.c:1010); Не назначен владелец сервиса</td><td>Запланируйте перевыпуск и замену сертификата до даты окончания. Назначьте ответственного.; Установите на сервере полную цепочку (промежуточные сертификаты) или используйте сертификат доверенного центра сертификации.; Назначьте ответственного в инвентаре, чтобы уведомления доходили до исполнителя.</td></tr><tr><td>Почта OWA</td><td>expiring.lab.local</td><td>8443</td><td>petrov@lab.local</td><td>high</td><td>expiring.lab.local</td><td>expiring.lab.local</td><td>Radar Lab Intermediate CA</td><td>321906FC68D4B8B0E24EB2B5AC266E1B7438B5B0</td><td>24.09.2025</td><td>29.09.2026</td><td>5</td><td><strong style="color: #fd7e14">Critical</strong></td><td>untrusted</td><td>Да</td><td>Нет</td><td>RSA 2048</td><td>sha256</td><td>100</td><td>Critical</td><td>Сертификат истекает через 5 дн.; Ошибка цепочки доверия: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate signature failure (_ssl.c:1010)</td><td>Запланируйте перевыпуск и замену сертификата до даты окончания. Назначьте ответственного.; Установите на сервере полную цепочку (промежуточные сертификаты) или используйте сертификат доверенного центра сертификации.</td></tr><tr><td>Портал</td><td>valid.lab.local</td><td>8443</td><td>ivanov@lab.local</td><td>medium</td><td>valid.lab.local</td><td>valid.lab.local</td><td>Radar Lab Intermediate CA</td><td>D33CA1D62FF31B12B86332BA33911209F8954572</td><td>24.09.2025</td><td>12.04.2027</td><td>200</td><td><strong style="color: #28a745">OK</strong></td><td>untrusted</td><td>Да</td><td>Нет</td><td>RSA 2048</td><td>sha256</td><td>45</td><td>Medium</td><td>Ошибка цепочки доверия: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate signature failure (_ssl.c:1010)</td><td>Установите на сервере полную цепочку (промежуточные сертификаты) или используйте сертификат доверенного центра сертификации.</td></tr><tr><td>Legacy App</td><td>weak.lab.local</td><td>8443</td><td></td><td>low</td><td>weak.lab.local</td><td></td><td>weak.lab.local</td><td>00869CCE4B70161B164CA928E53723F66A34E8A8</td><td>24.09.2026</td><td>24.09.2027</td><td>364</td><td><strong style="color: #28a745">OK</strong></td><td>untrusted</td><td>Да</td><td>Нет</td><td>RSA 1024</td><td>sha1</td><td>60</td><td>High</td><td>Ошибка цепочки доверия: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: EE certificate key too weak (_ssl.c:1010); Слабый ключ: 1024 бит; Устаревший алгоритм подписи: sha1; Не назначен владелец сервиса</td><td>Установите на сервере полную цепочку (промежуточные сертификаты) или используйте сертификат доверенного центра сертификации.; Перевыпустите сертификат с ключом RSA не менее 2048 бит или ECDSA P-256.; Перевыпустите сертификат с подписью SHA-256 или выше.; Назначьте ответственного в инвентаре, чтобы уведомления доходили до исполнителя.</td></tr><tr><td>API Gateway</td><td>mismatch.lab.local</td><td>8443</td><td>api@lab.local</td><td>high</td><td>other.lab.local</td><td>other.lab.local</td><td>Radar Lab Intermediate CA</td><td>D3F6D878B24D9A88CFE534600CBE78BD68C738C2</td><td>25.08.2026</td><td>24.09.2027</td><td>365</td><td><strong style="color: #28a745">OK</strong></td><td>untrusted</td><td>Нет</td><td>Нет</td><td>RSA 2048</td><td>sha256</td><td>90</td><td>Critical</td><td>Ошибка цепочки доверия: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate signature failure (_ssl.c:1010); Имя mismatch.lab.local не совпадает с CN/SAN сертификата: other.lab.local</td><td>Установите на сервере полную цепочку (промежуточные сертификаты) или используйте сертификат доверенного центра сертификации.; Перевыпустите сертификат с корректным именем в SAN или исправьте привязку сертификата на сервисе.</td></tr><tr><td>Wiki</td><td>info.lab.local</td><td>8443</td><td>sidorov@lab.local</td><td>low</td><td>info.lab.local</td><td>info.lab.local</td><td>Radar Lab Intermediate CA</td><td>6B049FA011FF40F68B0923289AC53130D647C317</td><td>24.09.2025</td><td>08.11.2026</td><td>45</td><td><strong style="color: #17a2b8">Information</strong></td><td>untrusted</td><td>Да</td><td>Нет</td><td>RSA 2048</td><td>sha256</td><td>45</td><td>Medium</td><td>Сертификат истекает через 45 дн.; Ошибка цепочки доверия: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate signature failure (_ssl.c:1010)</td><td>Запланируйте перевыпуск и замену сертификата до даты окончания. Назначьте ответственного.; Установите на сервере полную цепочку (промежуточные сертификаты) или используйте сертификат доверенного центра сертификации.</td></tr><tr><td>CRM</td><td>expired.lab.local</td><td>8443</td><td></td><td>high</td><td>expired.lab.local</td><td>expired.lab.local</td><td>Radar Lab Intermediate CA</td><td>FB21A243B3549C444955C7A3401BAB2C531A78A1</td><td>20.08.2025</td><td>19.09.2026</td><td>-5</td><td><strong style="color: #dc3545">Expired</strong></td><td>untrusted</td><td>Да</td><td>Нет</td><td>RSA 2048</td><td>sha256</td><td>100</td><td>Critical</td><td>Срок действия сертификата истёк 5 дн. назад; Ошибка цепочки доверия: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate signature failure (_ssl.c:1010); Не назначен владелец сервиса</td><td>Срочно перевыпустите сертификат и установите его на сервис. Проверьте, не нарушена ли работа клиентов.; Установите на сервере полную цепочку (промежуточные сертификаты) или используйте сертификат доверенного центра сертификации.; Назначьте ответственного в инвентаре, чтобы уведомления доходили до исполнителя.</td></tr><tr><td>Jenkins</td><td>selfsigned.lab.local</td><td>8443</td><td>ops@lab.local</td><td>medium</td><td>selfsigned.lab.local</td><td>selfsigned.lab.local</td><td>selfsigned.lab.local</td><td>F3DE868B60397C46CC76437FC151BAF1DE0E1264</td><td>25.08.2026</td><td>24.09.2027</td><td>365</td><td><strong style="color: #28a745">OK</strong></td><td>self_signed</td><td>Да</td><td>Да</td><td>RSA 2048</td><td>sha256</td><td>40</td><td>Medium</td><td>Сертификат самоподписанный, клиенты не могут проверить его подлинность</td><td>Замените сертификат на выпущенный корпоративным или публичным центром сертификации.</td></tr><tr><td>Old Service</td><td>dead.lab.local</td><td>8499</td><td></td><td>low</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><strong style="color: #6c757d">Unreachable</strong></td><td>untrusted</td><td></td><td>Нет</td><td></td><td></td><td></td><td>N/A</td><td>Сервис недоступен: Таймаут соединения</td><td>Проверьте доступность хоста и порта, правила межсетевого экрана и корректность DNS-имени.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
