@@ -7,7 +7,7 @@ from ..db import session
 from ..export.csv_export import export_csv
 from ..export.html_export import export_html
 from ..export.xlsx_export import export_xlsx
-from ..models import AuditLog, CertResult, Service, NotificationLog, Setting
+from ..models import AuditLog, CertResult, Service, NotificationLog, Setting, Scan
 from ..services import import_targets, run_scan
 
 app = FastAPI(title="Certificate Radar")
@@ -70,3 +70,16 @@ def save_settings(info_days: int = Form(...), warning_days: int = Form(...), cri
     for key,value in {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}.items():
         item=db.get(Setting,key) or Setting(key=key); item.value=str(value); db.add(item)
     db.commit(); db.close(); audit("SETTINGS_UPDATED", {"info_days":info_days,"warning_days":warning_days,"critical_days":critical_days}); return "<p>Настройки сохранены</p><a href='/settings'>Назад</a>"
+
+@app.get("/scans", response_class=HTMLResponse)
+def scans():
+    db=session(); items=list(db.exec(select(Scan).order_by(Scan.id.desc()))); db.close(); body="".join(f"<tr><td>{x.id}</td><td>{x.started_at}</td><td>{x.status}</td><td>{x.processed}/{x.total}</td></tr>" for x in items)
+    return f"<h1>История сканов</h1><table><tr><th>ID</th><th>Начало</th><th>Статус</th><th>Обработано</th></tr>{body}</table>"
+
+@app.get("/api/scans")
+def api_scans():
+    db=session(); items=list(db.exec(select(Scan).order_by(Scan.id.desc()))); db.close(); return [{"id":x.id,"status":x.status,"total":x.total,"processed":x.processed,"started_at":x.started_at,"finished_at":x.finished_at} for x in items]
+
+@app.get("/api/certificates")
+def api_certificates(status: str | None = None):
+    data=rows(); return [{"id":r.id,"host":s.host,"port":s.port,"owner":s.owner,"status":r.status,"days_left":r.days_left,"risk_score":r.risk_score,"risk_level":r.risk_level} for s,r in data if not status or r.status == status]
