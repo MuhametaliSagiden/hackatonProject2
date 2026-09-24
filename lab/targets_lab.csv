@@ -1,0 +1,3 @@
+target,service_name,owner,criticality
+expired.example,Веб,security@example.com,high
+unreachable.example,Недоступный сервис,,medium
