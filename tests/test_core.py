@@ -10,3 +10,4 @@ def test_parser_deduplicates_and_urls():
 def test_risk_levels():
     assert score("Critical", [], "high")[1] == "High"
     assert score("Expired", [], "high")[0] == 80
+    assert score("Critical", [], "high", days_left=5) == (80, "Critical")

@@ -7,6 +7,7 @@ DEFAULTS = {"thresholds": {"info_days": 60, "warning_days": 30, "critical_days":
 
 def load_config(path: Path | None = None) -> dict:
     value = DEFAULTS.copy()
+    path = path or ROOT / "config.yaml"
     if path and path.exists():
         with path.open(encoding="utf-8") as stream:
             loaded = yaml.safe_load(stream) or {}

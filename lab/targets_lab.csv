@@ -1,3 +1,7 @@
 target,service_name,owner,criticality
-expired.example,Веб,security@example.com,high
-unreachable.example,Недоступный сервис,,medium
+valid.lab.local:8443,Основной веб,ivanov@lab.local,high
+expiring.lab.local:8443,Почта OWA,petrov@lab.local,high
+expired.lab.local:8443,Старый портал,,high
+mismatch.lab.local:8443,Ошибка имени,sidorov@lab.local,medium
+selfsigned.lab.local:8443,Самоподписанный,,medium
+dead.lab.local:65534,Недоступный сервис,,medium

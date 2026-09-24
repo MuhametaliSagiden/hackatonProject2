@@ -15,3 +15,7 @@ def main():
         s=run_scan(); print(f"Скан завершён: {s.processed}/{s.total}")
     else:
         import uvicorn; uvicorn.run("radar.web.app:app", host=args.host, port=args.port)
+
+
+if __name__ == "__main__":
+    main()

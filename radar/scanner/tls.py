@@ -2,7 +2,9 @@ import hashlib
 import socket
 import ssl
 from dataclasses import dataclass
+from pathlib import Path
 
+import certifi
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
@@ -27,7 +29,10 @@ def grab(host, port, timeout=5, trust_ctx=None, overrides=None, extra_ca_files=N
         with socket.create_connection((ip, port), timeout) as sock, ctx.wrap_socket(sock, server_hostname=None if ip == host else host) as conn:
             der, version = conn.getpeercert(True), conn.version()
         chain_code, chain_message = None, None
-        verify = ssl.create_default_context()
+        verify = ssl.create_default_context(cafile=certifi.where())
+        for ca_file in extra_ca_files or []:
+            path=Path(ca_file)
+            if path.exists(): verify.load_verify_locations(cafile=str(path))
         verify.check_hostname = False
         try:
             with socket.create_connection((ip, port), timeout=timeout) as verify_sock, verify.wrap_socket(verify_sock, server_hostname=None if ip == host else host):
