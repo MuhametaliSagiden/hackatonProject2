@@ -78,6 +78,12 @@ dev = [
     { name = "ruff" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "apscheduler", specifier = ">=3.10,<4" },
@@ -95,6 +101,12 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"] },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest" },
+    { name = "ruff" },
+]
 
 [[package]]
 name = "cffi"
