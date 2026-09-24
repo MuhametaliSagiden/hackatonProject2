@@ -4,7 +4,7 @@
 - Steps 2-6: packaging, exports, audit, notifications, settings, hostname/self-signed and chain analysis (24.09.2026)
 - Steps 7-17: web/API, background scans, scheduler, external notifications, launch scripts, local TLS lab and IIS setup (24.09.2026)
 - Steps 18-20: notification settings, filtered exports, E2E/API checks and demo artifacts (24.09.2026)
-- Post-release: unified check pipeline, Jinja feedback pages, isolated notification/load/E2E tests and test database isolation (24.09.2026)
+- Post-release: Dashboard, фильтры, карточка с историей, JSON API 4.12 и тестовые уведомления из настроек (24.09.2026)
 
 ## Финальный чек-лист
 
@@ -25,4 +25,4 @@
 - [x] IIS-стенд на Windows Server VM: 12 RadarLab HTTPS/SNI сайтов, firewall rule и реальный TLS scan 13 целей.
 - [x] Реальный IIS scan: 13/13 обработано, `dead.lab.local` получил `Unreachable`, проверены Expired/Critical/Warning,
   hostname mismatch, weak key и chain error.
-- [ ] PowerShell parser check: отдельный `pwsh` не установлен; setup script фактически выполнен Windows PowerShell на VM.
+- [x] PowerShell parser check: `lab/windows/setup-iis-lab.ps1` проверен Windows PowerShell Parser API; отдельный `pwsh` не установлен.

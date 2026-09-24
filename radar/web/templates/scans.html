@@ -1,1 +1,18 @@
-{% extends "base.html" %}{% block content %}<h1>История сканов</h1><table><tr><th>ID</th><th>Начало</th><th>Завершение</th><th>Статус</th><th>Обработано</th><th>Источник</th></tr>{% for item in items %}<tr><td><a href="/scans/{{ item.id }}">{{ item.id }}</a></td><td>{{ item.started_at }}</td><td>{{ item.finished_at or '—' }}</td><td>{{ item.status }}</td><td>{{ item.processed }}/{{ item.total }}</td><td>{{ item.triggered_by }}</td></tr>{% endfor %}</table>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<h1>История сканов</h1>
+<form method="post" action="/scans/start"><button class="primary">Запустить скан</button></form>
+<table>
+  <tr><th>ID</th><th>Начало</th><th>Завершение</th><th>Статус</th><th>Обработано</th><th>Источник</th></tr>
+  {% for item in items %}
+  <tr>
+    <td><a href="/scans/{{ item.id }}">{{ item.id }}</a></td>
+    <td>{{ item.started_at|ru_datetime }}</td>
+    <td>{{ item.finished_at|ru_datetime }}</td>
+    <td>{{ item.status }}</td>
+    <td>{{ item.processed }}/{{ item.total }}</td>
+    <td>{{ item.triggered_by }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

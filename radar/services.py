@@ -13,6 +13,9 @@ from .scanner.engine import run_scan as engine_run_scan
 from .scanner.tls import RawResult
 from .targets.parser import ImportReport, parse_file
 
+STATUSES = ["OK", "Information", "Warning", "Critical", "Expired", "Unreachable"]
+RISK_LEVELS = ["Critical", "High", "Medium", "Low"]
+
 
 def import_targets(data: bytes, filename: str) -> ImportReport:
     report = parse_file(data, filename)
@@ -139,15 +142,119 @@ def latest_results(
 
     sort_keys = {
         "host": lambda x: x[0].host.lower(),
+        "service": lambda x: (x[0].service_name or "").lower(),
         "owner": lambda x: (x[0].owner or "").lower(),
         "issuer": lambda x: (x[1].issuer_cn or "").lower(),
         "risk": lambda x: x[1].risk_score if x[1].risk_score is not None else -1,
         "days_left": lambda x: x[1].days_left if x[1].days_left is not None else 10**9,
+        "not_after": lambda x: x[1].not_after.timestamp() if x[1].not_after is not None else 10**18,
         "status": lambda x: x[1].status,
     }
     key_fn = sort_keys.get(sort, lambda x: x[1].days_left if x[1].days_left is not None else 10**9)
     rows.sort(key=key_fn, reverse=(direction == "desc"))
     return rows
+
+
+def latest_done_scan() -> Scan | None:
+    with session() as db:
+        return db.exec(select(Scan).where(Scan.status == "done").order_by(Scan.id.desc())).first()
+
+
+def dashboard_data() -> dict[str, Any]:
+    data = latest_results()
+    scan = latest_done_scan()
+    cards = {name: sum(result.status == name for _, result in data) for name in STATUSES}
+    risks = {name: sum(result.risk_level == name for _, result in data) for name in RISK_LEVELS}
+    nearest = [(service, result) for service, result in data if result.days_left is not None]
+    nearest.sort(key=lambda item: item[1].days_left)
+    attention = [(service, result) for service, result in data if result.risk_level in {"Critical", "High"}]
+    attention.sort(key=lambda item: item[1].risk_score or 0, reverse=True)
+    total = len(data)
+    segments = [
+        (name, cards[name], round(100 * cards[name] / total, 1) if total else 0.0) for name in STATUSES
+    ]
+    return {
+        "has_scan": scan is not None,
+        "last_scan": scan,
+        "cards": cards,
+        "risks": risks,
+        "nearest": nearest[:10],
+        "attention": attention,
+        "segments": segments,
+        "total": total,
+    }
+
+
+def scan_summary(scan_id: int) -> dict[str, int]:
+    with session() as db:
+        results = list(db.exec(select(CertResult).where(CertResult.scan_id == scan_id)))
+    return {name: sum(item.status == name for item in results) for name in STATUSES}
+
+
+def service_history(service_id: int) -> list[tuple[Scan, CertResult]]:
+    with session() as db:
+        results = list(
+            db.exec(select(CertResult).where(CertResult.service_id == service_id).order_by(CertResult.scan_id.desc()))
+        )
+        scans = {item.id: item for item in db.exec(select(Scan))}
+    return [(scans[item.scan_id], item) for item in results if item.scan_id in scans]
+
+
+def current_settings() -> dict[str, Any]:
+    with session() as db:
+        stored = {item.key: item.value for item in db.exec(select(Setting))}
+    cfg = load_config(override_from_db=False)
+    values = {
+        "info_days": cfg["thresholds"]["info_days"],
+        "warning_days": cfg["thresholds"]["warning_days"],
+        "critical_days": cfg["thresholds"]["critical_days"],
+        "notify_thresholds": ",".join(str(item) for item in cfg["notify_thresholds"]),
+        "schedule_hours": cfg["scan"]["schedule_hours"],
+    }
+    values.update({key: value for key, value in stored.items() if value is not None})
+    return values
+
+
+def apply_settings(
+    info_days: int,
+    warning_days: int,
+    critical_days: int,
+    notify_thresholds: str,
+    schedule_hours: int,
+) -> tuple[bool, str, dict[str, Any]]:
+    values = current_settings()
+    if not info_days > warning_days > critical_days >= 0:
+        return False, "Ошибка: требуется info > warning > critical >= 0", values
+    try:
+        parsed = sorted({int(item.strip()) for item in notify_thresholds.split(",") if item.strip()}, reverse=True)
+    except ValueError:
+        return False, "Ошибка: пороги уведомлений должны быть числами", values
+    if not parsed or min(parsed) < 0 or schedule_hours < 0:
+        return False, "Ошибка: значения должны быть неотрицательными", values
+    with session() as db:
+        for key, value in {
+            "info_days": info_days,
+            "warning_days": warning_days,
+            "critical_days": critical_days,
+            "notify_thresholds": ",".join(map(str, parsed)),
+            "schedule_hours": schedule_hours,
+        }.items():
+            item = db.get(Setting, key) or Setting(key=key)
+            item.value = str(value)
+            db.add(item)
+        db.commit()
+    recompute_latest()
+    audit(
+        "SETTINGS_UPDATED",
+        {
+            "info_days": info_days,
+            "warning_days": warning_days,
+            "critical_days": critical_days,
+            "notify_thresholds": parsed,
+            "schedule_hours": schedule_hours,
+        },
+    )
+    return True, "Настройки сохранены, результаты пересчитаны и расписание обновлено.", current_settings()
 
 
 def recompute_latest() -> int:

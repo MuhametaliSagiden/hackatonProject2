@@ -1,1 +1,56 @@
-{% extends "base.html" %}{% block content %}<h1>Цели</h1><div class="grid"><form class="panel" method="post" action="/targets/upload" enctype="multipart/form-data"><h2>Загрузка файла</h2><input type="file" name="file" accept=".csv,.txt" required><button>Загрузить</button></form><form class="panel" method="post" action="/targets/import"><h2>Ручной ввод</h2><textarea name="target_text" rows="6" required></textarea><button>Импортировать</button></form></div><form method="post" action="/scans/start"><button class="primary">Запустить скан</button></form><table><tr><th>Хост</th><th>Порт</th><th>Сервис</th><th>Владелец</th><th>Критичность</th><th></th></tr>{% for item in items %}<tr><td>{{ item.host }}</td><td>{{ item.port }}</td><td>{{ item.service_name or '' }}</td><td colspan="3"><form class="inline" method="post" action="/targets/{{ item.id }}"><input name="owner" value="{{ item.owner or '' }}" placeholder="Владелец"><select name="criticality">{% for level in ['high','medium','low'] %}<option {% if item.criticality == level %}selected{% endif %}>{{ level }}</option>{% endfor %}</select><button>Сохранить</button></form></td></tr>{% endfor %}</table>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<h1>Цели сканирования</h1>
+<form method="post" action="/scans/start"><button class="primary">Запустить скан</button></form>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Загрузка файла</h2>
+    <form method="post" action="/targets/upload" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".csv,.txt" required>
+      <button>Импортировать файл</button>
+    </form>
+  </div>
+  <div class="panel">
+    <h2>Ручной ввод</h2>
+    <form method="post" action="/targets/import">
+      <textarea name="target_text" rows="8" placeholder="host.example.com&#10;https://mail.example.com:8443/owa&#10;10.0.0.5" required></textarea>
+      <button>Импортировать текст</button>
+    </form>
+  </div>
+</div>
+
+<h2>Сервисы</h2>
+{% if items %}
+<table>
+  <tr>
+    <th>Хост</th>
+    <th>Порт</th>
+    <th>Сервис</th>
+    <th>Владелец</th>
+    <th>Критичность</th>
+    <th></th>
+  </tr>
+  {% for item in items %}
+  <tr>
+    <td>{{ item.host }}</td>
+    <td>{{ item.port }}</td>
+    <td>{{ item.service_name or '—' }}</td>
+    <td colspan="3">
+      <form method="post" action="/targets/{{ item.id }}" class="inline">
+        <input name="owner" value="{{ item.owner or '' }}" placeholder="владелец">
+        <select name="criticality">
+          <option value="high" {% if item.criticality == 'high' %}selected{% endif %}>high</option>
+          <option value="medium" {% if item.criticality == 'medium' %}selected{% endif %}>medium</option>
+          <option value="low" {% if item.criticality == 'low' %}selected{% endif %}>low</option>
+        </select>
+        <button>Сохранить</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty">Целей пока нет. Загрузите файл или введите список вручную.</p>
+{% endif %}
+{% endblock %}

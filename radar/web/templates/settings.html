@@ -11,4 +11,7 @@
   <label>Расписание, часов<input type="number" name="schedule_hours" value="{{ values.get('schedule_hours','0') }}" min="0"></label>
   <button class="primary">Сохранить и пересчитать</button>
 </form>
+<form method="post" action="/settings/test">
+  <button>Отправить тестовое уведомление</button>
+</form>
 {% endblock %}

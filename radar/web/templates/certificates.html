@@ -2,13 +2,72 @@
 {% block content %}
 <h1>Сертификаты</h1>
 <form class="filters">
-  <select name="status"><option value="">Все статусы</option>{% for name in ['OK','Information','Warning','Critical','Expired','Unreachable'] %}<option value="{{ name }}" {% if status == name %}selected{% endif %}>{{ name }}</option>{% endfor %}</select>
-  <select name="owner"><option value="">Все владельцы</option>{% for item in owners %}<option value="{{ item }}" {% if owner == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
-  <select name="issuer"><option value="">Все Issuer</option>{% for item in issuers %}<option value="{{ item }}" {% if issuer == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
-  <select name="sort"><option value="days_left" {% if sort == 'days_left' %}selected{% endif %}>Срок</option><option value="host" {% if sort == 'host' %}selected{% endif %}>Хост</option><option value="owner" {% if sort == 'owner' %}selected{% endif %}>Владелец</option><option value="issuer" {% if sort == 'issuer' %}selected{% endif %}>Issuer</option><option value="risk" {% if sort == 'risk' %}selected{% endif %}>Риск</option></select>
-  <select name="dir"><option value="asc" {% if direction == 'asc' %}selected{% endif %}>По возрастанию</option><option value="desc" {% if direction == 'desc' %}selected{% endif %}>По убыванию</option></select>
+  <select name="status">
+    <option value="">Все статусы</option>
+    {% for name in ['OK','Information','Warning','Critical','Expired','Unreachable'] %}
+    <option value="{{ name }}" {% if status == name %}selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+  <select name="owner">
+    <option value="">Все владельцы</option>
+    {% for item in owners %}<option value="{{ item }}" {% if owner == item %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  <select name="issuer">
+    <option value="">Все Issuer</option>
+    {% for item in issuers %}<option value="{{ item }}" {% if issuer == item %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  <select name="risk_level">
+    <option value="">Все уровни риска</option>
+    {% for name in ['Critical','High','Medium','Low'] %}
+    <option value="{{ name }}" {% if risk_level == name %}selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+  <input name="days_max" value="{{ days_max }}" placeholder="Макс. дней" inputmode="numeric">
+  <select name="sort">
+    <option value="days_left" {% if sort == 'days_left' %}selected{% endif %}>Срок</option>
+    <option value="not_after" {% if sort == 'not_after' %}selected{% endif %}>Дата окончания</option>
+    <option value="host" {% if sort == 'host' %}selected{% endif %}>Хост</option>
+    <option value="service" {% if sort == 'service' %}selected{% endif %}>Сервис</option>
+    <option value="owner" {% if sort == 'owner' %}selected{% endif %}>Владелец</option>
+    <option value="issuer" {% if sort == 'issuer' %}selected{% endif %}>Issuer</option>
+    <option value="status" {% if sort == 'status' %}selected{% endif %}>Статус</option>
+    <option value="risk" {% if sort == 'risk' %}selected{% endif %}>Риск</option>
+  </select>
+  <select name="dir">
+    <option value="asc" {% if direction == 'asc' %}selected{% endif %}>По возрастанию</option>
+    <option value="desc" {% if direction == 'desc' %}selected{% endif %}>По убыванию</option>
+  </select>
   <input name="q" value="{{ q }}" placeholder="Хост или сервис">
   <button>Применить</button>
 </form>
-<table><tr><th>Хост</th><th>Владелец</th><th>Issuer</th><th>Статус</th><th>Дни</th><th>Risk</th></tr>{% for service,result in rows %}<tr><td><a href="/certificates/{{ result.id }}">{{ service.host }}</a></td><td>{{ service.owner or 'не назначен' }}</td><td>{{ result.issuer_cn or '' }}</td><td>{{ result.status }}</td><td>{{ result.days_left if result.days_left is not none else '' }}</td><td>{{ result.risk_score if result.risk_score is not none else '' }}</td></tr>{% endfor %}</table>
+<p class="exports">
+  <a href="/export?format=csv&status={{ status }}&q={{ q }}&owner={{ owner }}&issuer={{ issuer }}&risk_level={{ risk_level }}&days_max={{ days_max }}">CSV</a>
+  <a href="/export?format=xlsx&status={{ status }}&q={{ q }}&owner={{ owner }}&issuer={{ issuer }}&risk_level={{ risk_level }}&days_max={{ days_max }}">XLSX</a>
+  <a href="/export?format=html&status={{ status }}&q={{ q }}&owner={{ owner }}&issuer={{ issuer }}&risk_level={{ risk_level }}&days_max={{ days_max }}">HTML</a>
+</p>
+{% set qs = 'status=' ~ status ~ '&q=' ~ q ~ '&owner=' ~ owner ~ '&issuer=' ~ issuer ~ '&risk_level=' ~ risk_level ~ '&days_max=' ~ days_max %}
+<table>
+  <tr>
+    <th><a href="/certificates?{{ qs }}&sort=service&dir={{ 'desc' if sort == 'service' and direction == 'asc' else 'asc' }}">Сервис</a></th>
+    <th><a href="/certificates?{{ qs }}&sort=host&dir={{ 'desc' if sort == 'host' and direction == 'asc' else 'asc' }}">Хост:порт</a></th>
+    <th><a href="/certificates?{{ qs }}&sort=issuer&dir={{ 'desc' if sort == 'issuer' and direction == 'asc' else 'asc' }}">Issuer</a></th>
+    <th><a href="/certificates?{{ qs }}&sort=not_after&dir={{ 'desc' if sort == 'not_after' and direction == 'asc' else 'asc' }}">Действует до</a></th>
+    <th><a href="/certificates?{{ qs }}&sort=days_left&dir={{ 'desc' if sort == 'days_left' and direction == 'asc' else 'asc' }}">Дней</a></th>
+    <th><a href="/certificates?{{ qs }}&sort=status&dir={{ 'desc' if sort == 'status' and direction == 'asc' else 'asc' }}">Статус</a></th>
+    <th><a href="/certificates?{{ qs }}&sort=risk&dir={{ 'desc' if sort == 'risk' and direction == 'asc' else 'asc' }}">Риск</a></th>
+    <th><a href="/certificates?{{ qs }}&sort=owner&dir={{ 'desc' if sort == 'owner' and direction == 'asc' else 'asc' }}">Владелец</a></th>
+  </tr>
+  {% for service, result in rows %}
+  <tr class="status-{{ result.status|lower }}">
+    <td>{{ service.service_name or '—' }}</td>
+    <td><a href="/certificates/{{ result.id }}">{{ service.host }}:{{ service.port }}</a></td>
+    <td>{{ result.issuer_cn or '' }}</td>
+    <td>{{ result.not_after|ru_date }}</td>
+    <td>{{ result.days_left if result.days_left is not none else '' }}</td>
+    <td>{{ result.status }}</td>
+    <td>{{ result.risk_score if result.risk_score is not none else 'N/A' }} {{ result.risk_level }}</td>
+    <td>{{ service.owner or 'не назначен' }}</td>
+  </tr>
+  {% endfor %}
+</table>
 {% endblock %}

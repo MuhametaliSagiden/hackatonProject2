@@ -1,1 +1,15 @@
-{% extends "base.html" %}{% block content %}<h1>Журнал аудита</h1><table><tr><th>Время</th><th>Пользователь</th><th>Действие</th><th>Детали</th></tr>{% for item in logs %}<tr><td>{{ item.ts }}</td><td>{{ item.actor }}</td><td>{{ item.action }}</td><td class="break">{{ item.details }}</td></tr>{% endfor %}</table>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<h1>Журнал аудита</h1>
+<table>
+  <tr><th>Время</th><th>Пользователь</th><th>Действие</th><th>Детали</th></tr>
+  {% for item in logs %}
+  <tr>
+    <td>{{ item.ts|ru_datetime }}</td>
+    <td>{{ item.actor }}</td>
+    <td>{{ item.action }}</td>
+    <td class="break">{{ item.details }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

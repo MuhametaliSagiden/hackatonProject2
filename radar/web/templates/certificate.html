@@ -1,1 +1,67 @@
-{% extends "base.html" %}{% block content %}<h1>{{ service.host }}:{{ service.port }}</h1><div class="cards"><div class="card"><span>Статус</span><strong>{{ result.status }}</strong></div><div class="card"><span>Risk</span><strong>{{ result.risk_score if result.risk_score is not none else 'N/A' }}</strong><small>{{ result.risk_level }}</small></div><div class="card"><span>Дней осталось</span><strong>{{ result.days_left if result.days_left is not none else '—' }}</strong></div></div><h2>Сертификат</h2><table><tr><th>CN</th><td>{{ result.subject_cn or '—' }}</td></tr><tr><th>Issuer</th><td>{{ result.issuer_full or result.issuer_cn or '—' }}</td></tr><tr><th>SAN DNS</th><td>{{ san_dns|join(', ') or '—' }}</td></tr><tr><th>SAN IP</th><td>{{ san_ip|join(', ') or '—' }}</td></tr><tr><th>Срок</th><td>{{ result.not_before }} — {{ result.not_after }}</td></tr><tr><th>Ключ</th><td>{{ result.key_type or '—' }} {{ result.key_size or '' }}</td></tr><tr><th>TLS</th><td>{{ result.tls_version or '—' }}</td></tr><tr><th>SHA-256</th><td class="break">{{ result.thumbprint_sha256 or '—' }}</td></tr></table><h2>Находки и рекомендации</h2>{% if findings %}<table><tr><th>Код</th><th>Причина</th><th>Рекомендация</th></tr>{% for finding in findings %}<tr><td>{{ finding.code }}</td><td>{{ finding.reason }}</td><td>{{ finding.recommendation }}</td></tr>{% endfor %}</table>{% else %}<p class="empty">Проблем не обнаружено.</p>{% endif %}{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ service.service_name or service.host }} — {{ service.host }}:{{ service.port }}</h1>
+<div class="cards">
+  <div class="card status-{{ result.status|lower }}"><span>Статус</span><strong>{{ result.status }}</strong></div>
+  <div class="card status-{{ result.risk_level|lower }}">
+    <span>Risk Score</span>
+    <strong>{{ result.risk_score if result.risk_score is not none else 'N/A' }}</strong>
+    <small>{{ result.risk_level }}</small>
+  </div>
+  <div class="card"><span>Дней осталось</span><strong>{{ result.days_left if result.days_left is not none else '—' }}</strong></div>
+</div>
+<h2>Сертификат</h2>
+<table>
+  <tr><th>Владелец</th><td>{{ service.owner or 'не назначен' }}</td></tr>
+  <tr><th>Критичность</th><td>{{ service.criticality }}</td></tr>
+  <tr><th>IP</th><td>{{ result.resolved_ip or '—' }}</td></tr>
+  <tr><th>CN</th><td>{{ result.subject_cn or '—' }}</td></tr>
+  <tr><th>Issuer</th><td>{{ result.issuer_full or result.issuer_cn or '—' }}</td></tr>
+  <tr><th>SAN DNS</th><td>{% if san_dns %}<ul>{% for name in san_dns %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}—{% endif %}</td></tr>
+  <tr><th>SAN IP</th><td>{% if san_ip %}<ul>{% for name in san_ip %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}—{% endif %}</td></tr>
+  <tr><th>Серийный номер</th><td class="break">{{ result.serial or '—' }}</td></tr>
+  <tr><th>Thumbprint SHA-1</th><td class="break">{{ result.thumbprint_sha1 or '—' }}</td></tr>
+  <tr><th>Thumbprint SHA-256</th><td class="break">{{ result.thumbprint_sha256 or '—' }}</td></tr>
+  <tr><th>Действует с</th><td>{{ result.not_before|ru_date }}</td></tr>
+  <tr><th>Действует до</th><td>{{ result.not_after|ru_date }}</td></tr>
+  <tr><th>Ключ</th><td>{{ result.key_type or '—' }} {{ result.key_size or '' }}</td></tr>
+  <tr><th>Подпись</th><td>{{ result.sig_hash or '—' }}</td></tr>
+  <tr><th>TLS</th><td>{{ result.tls_version or '—' }}</td></tr>
+  <tr><th>Цепочка</th><td>{{ result.chain_status }} {% if result.chain_verify_message %}({{ result.chain_verify_message }}){% endif %}</td></tr>
+  <tr><th>Имя совпадает</th><td>{{ 'Да' if result.hostname_match else ('Нет' if result.hostname_match is sameas false else '—') }}</td></tr>
+  <tr><th>Self-signed</th><td>{{ 'Да' if result.self_signed else ('Нет' if result.self_signed is sameas false else '—') }}</td></tr>
+  {% if result.error %}<tr><th>Ошибка</th><td>{{ result.error }}</td></tr>{% endif %}
+</table>
+<h2>Находки и рекомендации</h2>
+{% if findings %}
+<table>
+  <tr><th>Код</th><th>Причина</th><th>Рекомендация</th></tr>
+  {% for finding in findings %}
+  <tr>
+    <td>{{ finding.code }}</td>
+    <td>{{ finding.reason }}</td>
+    <td>{{ finding.recommendation }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty">Проблем не обнаружено.</p>
+{% endif %}
+<h2>История сканов</h2>
+{% if history %}
+<table>
+  <tr><th>Скан</th><th>Дата</th><th>Статус</th><th>Дней</th><th>Risk</th></tr>
+  {% for scan, item in history %}
+  <tr>
+    <td><a href="/scans/{{ scan.id }}">#{{ scan.id }}</a></td>
+    <td>{{ scan.finished_at|ru_datetime }}</td>
+    <td>{{ item.status }}</td>
+    <td>{{ item.days_left if item.days_left is not none else '—' }}</td>
+    <td>{{ item.risk_score if item.risk_score is not none else 'N/A' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty">История пока отсутствует.</p>
+{% endif %}
+{% endblock %}

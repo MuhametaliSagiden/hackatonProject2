@@ -1,8 +1,10 @@
 import json
 from contextlib import asynccontextmanager
 
+from datetime import datetime
+
 from fastapi import FastAPI, File, Form, Query, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import select
@@ -11,8 +13,17 @@ from ..db import session
 from ..export.csv_export import export_csv
 from ..export.html_export import export_html
 from ..export.xlsx_export import export_xlsx
-from ..models import AuditLog, CertResult, Service, NotificationLog, Setting, Scan
-from ..services import import_targets, recompute_latest, run_scan_background
+from ..models import AuditLog, CertResult, Service, NotificationLog, Scan, Setting
+from ..services import (
+    apply_settings,
+    current_settings,
+    dashboard_data,
+    import_targets,
+    latest_results,
+    run_scan_background,
+    scan_summary,
+    service_history,
+)
 from ..notify.service import send_test
 from ..scheduler import start_scheduler, update_scheduler
 from ..config import ROOT, load_config
@@ -38,6 +49,20 @@ async def lifespan(app):
 app = FastAPI(title="Certificate Radar", lifespan=lifespan)
 WEB_ROOT = ROOT / "radar" / "web"
 templates = Jinja2Templates(directory=str(WEB_ROOT / "templates"))
+templates.env.filters["ru_date"] = lambda value: (
+    value.strftime("%d.%m.%Y")
+    if isinstance(value, datetime)
+    else "—"
+    if value is None
+    else str(value)
+)
+templates.env.filters["ru_datetime"] = lambda value: (
+    value.strftime("%d.%m.%Y %H:%M")
+    if isinstance(value, datetime)
+    else "—"
+    if value is None
+    else str(value)
+)
 app.mount("/static", StaticFiles(directory=str(WEB_ROOT / "static")), name="static")
 
 
@@ -46,13 +71,26 @@ def health():
     return {"status": "ok"}
 
 
-def rows():
-    db = session()
-    latest = db.exec(select(Scan).where(Scan.status == "done").order_by(Scan.id.desc())).first()
-    result = list(db.exec(select(CertResult).where(CertResult.scan_id == latest.id))) if latest else []
-    services = {s.id: s for s in db.exec(select(Service))}
-    db.close()
-    return [(services[x.service_id], x) for x in result]
+def rows(filters: dict | None = None, sort: str = "days_left", direction: str = "asc"):
+    return latest_results(filters=filters, sort=sort, direction=direction)
+
+
+def result_filters(
+    status: str | None = None,
+    q: str | None = None,
+    owner: str | None = None,
+    issuer: str | None = None,
+    risk_level: str | None = None,
+    days_max: str | None = None,
+) -> dict:
+    return {
+        "status": status or None,
+        "q": q or None,
+        "owner": owner or None,
+        "issuer": issuer or None,
+        "risk_level": risk_level or None,
+        "days_max": days_max or None,
+    }
 
 
 def json_list(value):
@@ -127,13 +165,7 @@ def start_scan():
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
-    data = rows()
-    cards = {
-        x: sum(r.status == x for _, r in data)
-        for x in ["OK", "Information", "Warning", "Critical", "Expired", "Unreachable"]
-    }
-    nearest = sorted([(s, r) for s, r in data if r.days_left is not None], key=lambda x: x[1].days_left)[:10]
-    return templates.TemplateResponse(request, "dashboard.html", {"cards": cards, "nearest": nearest})
+    return templates.TemplateResponse(request, "dashboard.html", dashboard_data())
 
 
 @app.get("/certificates", response_class=HTMLResponse)
@@ -143,29 +175,16 @@ def certificates(
     q: str | None = None,
     owner: str | None = None,
     issuer: str | None = None,
+    risk_level: str | None = None,
+    days_max: str | None = None,
     sort: str = "days_left",
     dir: str = "asc",
 ):
     all_data = rows()
     owners = sorted({s.owner for s, _ in all_data if s.owner})
     issuers = sorted({r.issuer_cn for _, r in all_data if r.issuer_cn})
-    data = all_data
-    data = [
-        (s, r)
-        for s, r in data
-        if (not status or r.status == status)
-        and (not owner or s.owner == owner)
-        and (not issuer or r.issuer_cn == issuer)
-        and (not q or q.lower() in (s.host + " " + (s.service_name or "")).lower())
-    ]
-    key = {
-        "host": lambda x: x[0].host,
-        "owner": lambda x: x[0].owner or "",
-        "issuer": lambda x: x[1].issuer_cn or "",
-        "risk": lambda x: x[1].risk_score if x[1].risk_score is not None else -1,
-        "days_left": lambda x: x[1].days_left if x[1].days_left is not None else 10**9,
-    }.get(sort, lambda x: x[1].days_left or 10**9)
-    data.sort(key=key, reverse=dir == "desc")
+    filters = result_filters(status, q, owner, issuer, risk_level, days_max)
+    data = rows(filters=filters, sort=sort, direction=dir)
     return templates.TemplateResponse(
         request,
         "certificates.html",
@@ -175,6 +194,8 @@ def certificates(
             "q": q or "",
             "owner": owner or "",
             "issuer": issuer or "",
+            "risk_level": risk_level or "",
+            "days_max": days_max or "",
             "owners": owners,
             "issuers": issuers,
             "sort": sort,
@@ -189,7 +210,7 @@ def certificate(request: Request, result_id: int):
     result = db.get(CertResult, result_id)
     service = db.get(Service, result.service_id) if result else None
     db.close()
-    if not result:
+    if not result or not service:
         return HTMLResponse("Не найдено", status_code=404)
     return templates.TemplateResponse(
         request,
@@ -200,7 +221,38 @@ def certificate(request: Request, result_id: int):
             "findings": json_list(result.findings),
             "san_dns": json_list(result.san_dns),
             "san_ip": json_list(result.san_ip),
+            "history": service_history(service.id),
         },
+    )
+
+
+def export_response(
+    format: str = "csv",
+    status: str | None = None,
+    q: str | None = None,
+    owner: str | None = None,
+    issuer: str | None = None,
+    risk_level: str | None = None,
+    days_max: str | None = None,
+):
+    data = rows(
+        filters=result_filters(status, q, owner, issuer, risk_level, days_max),
+        sort="days_left",
+        direction="asc",
+    )
+    audit("EXPORT", {"format": format, "status": status, "rows": len(data)})
+    if format == "xlsx":
+        return Response(
+            export_xlsx(data),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=certificates.xlsx"},
+        )
+    if format == "html":
+        return HTMLResponse(export_html(data))
+    return Response(
+        export_csv(data),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=certificates.csv"},
     )
 
 
@@ -211,27 +263,10 @@ def export(
     q: str | None = None,
     owner: str | None = None,
     issuer: str | None = None,
+    risk_level: str | None = None,
+    days_max: str | None = None,
 ):
-    data = [
-        (s, r)
-        for s, r in rows()
-        if (not status or r.status == status)
-        and (not owner or s.owner == owner)
-        and (not issuer or r.issuer_cn == issuer)
-        and (not q or q.lower() in (s.host + " " + (s.service_name or "")).lower())
-    ]
-    audit("EXPORT", {"format": format, "status": status, "rows": len(data)})
-    if format == "xlsx":
-        return Response(
-            export_xlsx(data), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    if format == "html":
-        return HTMLResponse(export_html(data))
-    return Response(
-        export_csv(data),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": "attachment; filename=certificates.csv"},
-    )
+    return export_response(format, status, q, owner, issuer, risk_level, days_max)
 
 
 @app.get("/audit", response_class=HTMLResponse)
@@ -257,10 +292,7 @@ def notification_test():
 
 @app.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request):
-    db = session()
-    values = {x.key: x.value for x in db.exec(select(Setting))}
-    db.close()
-    return templates.TemplateResponse(request, "settings.html", {"values": values})
+    return templates.TemplateResponse(request, "settings.html", {"values": current_settings()})
 
 
 @app.post("/settings", response_class=HTMLResponse)
@@ -272,68 +304,34 @@ def save_settings(
     notify_thresholds: str = Form("60,30,14,7,1"),
     schedule_hours: int = Form(0),
 ):
-    db = session()
-    values = {x.key: x.value for x in db.exec(select(Setting))}
-    db.close()
-    if not info_days > warning_days > critical_days >= 0:
-        return templates.TemplateResponse(
-            request,
-            "settings.html",
-            {"values": values, "error": "Ошибка: требуется info > warning > critical >= 0"},
-            status_code=400,
-        )
-    try:
-        parsed = sorted({int(x.strip()) for x in notify_thresholds.split(",") if x.strip()}, reverse=True)
-    except ValueError:
-        return templates.TemplateResponse(
-            request,
-            "settings.html",
-            {"values": values, "error": "Ошибка: пороги уведомлений должны быть числами"},
-            status_code=400,
-        )
-    if not parsed or min(parsed) < 0 or schedule_hours < 0:
-        return templates.TemplateResponse(
-            request,
-            "settings.html",
-            {"values": values, "error": "Ошибка: значения должны быть неотрицательными"},
-            status_code=400,
-        )
-    db = session()
-    for key, value in {
-        "info_days": info_days,
-        "warning_days": warning_days,
-        "critical_days": critical_days,
-        "notify_thresholds": ",".join(map(str, parsed)),
-        "schedule_hours": schedule_hours,
-    }.items():
-        item = db.get(Setting, key) or Setting(key=key)
-        item.value = str(value)
-        db.add(item)
-    db.commit()
-    db.close()
-    recompute_latest()
-    update_scheduler(_scheduler, schedule_hours)
-    audit(
-        "SETTINGS_UPDATED",
-        {
-            "info_days": info_days,
-            "warning_days": warning_days,
-            "critical_days": critical_days,
-            "notify_thresholds": parsed,
-            "schedule_hours": schedule_hours,
-        },
+    ok, message, values = apply_settings(
+        info_days, warning_days, critical_days, notify_thresholds, schedule_hours
     )
-    db = session()
-    values = {x.key: x.value for x in db.exec(select(Setting))}
-    db.close()
+    if not ok:
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {"values": values, "error": message},
+            status_code=400,
+        )
+    update_scheduler(_scheduler, schedule_hours)
     return templates.TemplateResponse(
         request,
         "settings.html",
-        {
-            "values": values,
-            "message": "Настройки сохранены, результаты пересчитаны и расписание обновлено.",
-        },
+        {"values": values, "message": message},
     )
+
+
+@app.post("/settings/test")
+def settings_test_notification():
+    send_test()
+    return RedirectResponse("/notifications", status_code=303)
+
+
+@app.post("/notifications/test")
+def notifications_test():
+    send_test()
+    return RedirectResponse("/notifications", status_code=303)
 
 
 @app.get("/scans", response_class=HTMLResponse)
@@ -351,7 +349,11 @@ def scan_page(request: Request, scan_id: int):
     db.close()
     if not item:
         return HTMLResponse("Скан не найден", status_code=404)
-    return templates.TemplateResponse(request, "scan.html", {"item": item})
+    return templates.TemplateResponse(
+        request,
+        "scan.html",
+        {"item": item, "summary": scan_summary(scan_id) if item.status == "done" else None},
+    )
 
 
 @app.get("/api/scans")
@@ -393,11 +395,12 @@ def api_certificates(status: str | None = None):
 
 @app.get("/api/dashboard")
 def api_dashboard():
-    data = rows()
-    statuses = ["OK", "Information", "Warning", "Critical", "Expired", "Unreachable"]
+    data = dashboard_data()
     return {
-        "total": len(data),
-        "statuses": {status: sum(item.status == status for _, item in data) for status in statuses},
+        "total": data["total"],
+        "statuses": data["cards"],
+        "risks": data["risks"],
+        "has_scan": data["has_scan"],
     }
 
 
@@ -494,3 +497,137 @@ def update_service(service_id: int, owner: str = Form(""), criticality: str = Fo
     db.close()
     audit("SERVICE_UPDATED", {"service_id": service_id})
     return {"status": "ok"}
+
+
+@app.post("/api/targets/import")
+async def api_targets_import(file: UploadFile | None = File(None), target_text: str = Form("")):
+    if file is not None:
+        report = import_targets(await file.read(), file.filename or "targets.txt")
+    else:
+        report = import_targets(target_text.encode("utf-8"), "targets.txt")
+    return {
+        "added": report.added,
+        "updated": report.updated,
+        "duplicates": report.duplicates,
+        "invalid": report.invalid,
+    }
+
+
+@app.post("/api/scans")
+def api_scans_start():
+    item = run_scan_background(triggered_by="ui")
+    return {"id": item.id, "status": "running", "processed": 0, "total": item.total}
+
+
+@app.get("/api/scans/{scan_id}")
+def api_scan_detail(scan_id: int):
+    db = session()
+    item = db.get(Scan, scan_id)
+    db.close()
+    if not item:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return {
+        "id": item.id,
+        "status": item.status,
+        "total": item.total,
+        "processed": item.processed,
+        "started_at": item.started_at,
+        "finished_at": item.finished_at,
+        "triggered_by": item.triggered_by,
+        "summary": scan_summary(scan_id) if item.status == "done" else None,
+    }
+
+
+@app.get("/api/results")
+def api_results(
+    status: str | None = None,
+    q: str | None = None,
+    owner: str | None = None,
+    issuer: str | None = None,
+    risk_level: str | None = None,
+    days_max: str | None = None,
+    sort: str = "days_left",
+    dir: str = "asc",
+):
+    data = rows(
+        filters=result_filters(status, q, owner, issuer, risk_level, days_max),
+        sort=sort,
+        direction=dir,
+    )
+    return [
+        {
+            "id": r.id,
+            "host": s.host,
+            "port": s.port,
+            "service_name": s.service_name,
+            "owner": s.owner,
+            "status": r.status,
+            "days_left": r.days_left,
+            "risk_score": r.risk_score,
+            "risk_level": r.risk_level,
+            "issuer_cn": r.issuer_cn,
+        }
+        for s, r in data
+    ]
+
+
+@app.get("/api/results/{result_id}")
+def api_result_detail(result_id: int):
+    return api_certificate(result_id)
+
+
+@app.get("/api/settings")
+def api_get_settings():
+    return current_settings()
+
+
+@app.put("/api/settings")
+def api_put_settings(payload: dict):
+    notify = payload.get("notify_thresholds", "60,30,14,7,1")
+    if isinstance(notify, list):
+        notify = ",".join(str(item) for item in notify)
+    ok, message, values = apply_settings(
+        int(payload.get("info_days", 60)),
+        int(payload.get("warning_days", 30)),
+        int(payload.get("critical_days", 14)),
+        str(notify),
+        int(payload.get("schedule_hours", 0)),
+    )
+    if not ok:
+        return JSONResponse({"error": message}, status_code=400)
+    update_scheduler(_scheduler, int(payload.get("schedule_hours", 0)))
+    return {"ok": True, "message": message, "values": values}
+
+
+@app.patch("/api/services/{service_id}")
+def api_patch_service(service_id: int, payload: dict):
+    db = session()
+    item = db.get(Service, service_id)
+    if not item:
+        db.close()
+        return JSONResponse({"error": "not found"}, status_code=404)
+    owner = payload.get("owner", item.owner)
+    criticality = payload.get("criticality", item.criticality)
+    if criticality not in {"high", "medium", "low"}:
+        db.close()
+        return JSONResponse({"error": "invalid criticality"}, status_code=400)
+    item.owner = (owner or "").strip() or None
+    item.criticality = criticality
+    db.add(item)
+    db.commit()
+    db.close()
+    audit("SERVICE_UPDATED", {"service_id": service_id, "owner": item.owner, "criticality": criticality})
+    return {"id": service_id, "owner": item.owner, "criticality": item.criticality}
+
+
+@app.get("/api/export")
+def api_export(
+    format: str = Query("csv"),
+    status: str | None = None,
+    q: str | None = None,
+    owner: str | None = None,
+    issuer: str | None = None,
+    risk_level: str | None = None,
+    days_max: str | None = None,
+):
+    return export_response(format, status, q, owner, issuer, risk_level, days_max)

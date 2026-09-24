@@ -1,1 +1,24 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Certificate Radar</title><link rel="stylesheet" href="{{ url_for('static', path='/bootstrap.min.css') }}"></head><body><nav class="navbar"><a class="brand" href="/">Certificate Radar</a><a href="/targets">Цели</a><a href="/certificates">Сертификаты</a><a href="/scans">Сканы</a><a href="/notifications">Уведомления</a><a href="/settings">Настройки</a><a href="/audit">Аудит</a></nav><main class="container">{% block content %}{% endblock %}</main><script src="{{ url_for('static', path='/bootstrap.bundle.min.js') }}"></script></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Certificate Radar</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/bootstrap.min.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar">
+    <a class="brand" href="/">Certificate Radar</a>
+    <a href="/">Dashboard</a>
+    <a href="/certificates">Сертификаты</a>
+    <a href="/targets">Цели</a>
+    <a href="/scans">Сканы</a>
+    <a href="/notifications">Уведомления</a>
+    <a href="/audit">Аудит</a>
+    <a href="/settings">Настройки</a>
+  </nav>
+  <main class="container">{% block content %}{% endblock %}</main>
+  <script src="{{ url_for('static', path='/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

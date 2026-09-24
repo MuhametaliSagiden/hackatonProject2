@@ -20,8 +20,8 @@ def test_invalid_threshold_order_is_rejected():
 def test_schedule_is_updated_without_restart(monkeypatch):
     updates = []
     monkeypatch.setattr("radar.web.app.update_scheduler", lambda scheduler, hours: updates.append(hours))
-    monkeypatch.setattr("radar.web.app.recompute_latest", lambda: 0)
-    monkeypatch.setattr("radar.web.app.audit", lambda *args, **kwargs: None)
+    monkeypatch.setattr("radar.services.recompute_latest", lambda: 0)
+    monkeypatch.setattr("radar.services.audit", lambda *args, **kwargs: None)
 
     response = TestClient(app).post(
         "/settings",

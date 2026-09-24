@@ -6,7 +6,12 @@ from radar.web.app import app
 def test_health_and_targets_pages():
     client = TestClient(app)
     assert client.get("/health").json() == {"status": "ok"}
-    assert "Цели" in client.get("/targets").text
+    targets = client.get("/targets")
+    assert targets.status_code == 200
+    assert "Цели" in targets.text
+    assert 'action="/targets/upload"' in targets.text
+    assert 'name="target_text"' in targets.text
+    assert 'action="/scans/start"' in targets.text
     assert client.get("/static/bootstrap.min.css").status_code == 200
     assert "Обзор сертификатов" in client.get("/").text
 
@@ -63,4 +68,20 @@ def test_certificate_filters_include_owner_issuer_and_sort_controls():
     assert response.status_code == 200
     assert 'name="owner"' in response.text
     assert 'name="issuer"' in response.text
-    assert 'value="risk"' in response.text
+    assert 'name="risk_level"' in response.text
+    assert 'name="days_max"' in response.text
+    assert "CSV" in response.text
+    assert "sort=owner&dir=" in response.text
+    assert "sort=days_left&dir=" in response.text
+
+
+def test_api_settings_and_results_endpoints():
+    client = TestClient(app)
+    assert client.get("/api/settings").status_code == 200
+    assert client.get("/api/results").status_code == 200
+    rejected = client.put(
+        "/api/settings",
+        json={"info_days": 10, "warning_days": 20, "critical_days": 5, "notify_thresholds": [60, 30], "schedule_hours": 0},
+    )
+    assert rejected.status_code == 400
+    assert client.get("/api/export?format=csv").status_code == 200

@@ -1,1 +1,23 @@
-{% extends "base.html" %}{% block content %}{% if item.status == 'running' %}<meta http-equiv="refresh" content="2">{% endif %}<h1>Скан #{{ item.id }}</h1><div class="card"><p>Статус: <strong>{{ item.status }}</strong></p><p>Обработано: {{ item.processed }}/{{ item.total }}</p><progress value="{{ item.processed }}" max="{{ item.total or 1 }}"></progress></div><p><a href="/scans">Вернуться к истории</a></p>{% endblock %}
+{% extends "base.html" %}
+{% block extra_head %}
+{% if item.status == 'running' %}<meta http-equiv="refresh" content="2">{% endif %}
+{% endblock %}
+{% block content %}
+<h1>Скан #{{ item.id }}</h1>
+<div class="card">
+  <p>Статус: <strong>{{ item.status }}</strong></p>
+  <p>Обработано: {{ item.processed }}/{{ item.total }}</p>
+  <p>Начало: {{ item.started_at|ru_datetime }}</p>
+  <p>Завершение: {{ item.finished_at|ru_datetime }}</p>
+  <progress value="{{ item.processed }}" max="{{ item.total or 1 }}"></progress>
+</div>
+{% if summary %}
+<h2>Сводка</h2>
+<div class="cards">
+  {% for name, count in summary.items() %}
+  <div class="card status-{{ name|lower }}"><strong>{{ count }}</strong><span>{{ name }}</span></div>
+  {% endfor %}
+</div>
+{% endif %}
+<p><a href="/scans">Вернуться к истории</a></p>
+{% endblock %}
