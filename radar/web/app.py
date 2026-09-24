@@ -10,6 +10,7 @@ from ..export.html_export import export_html
 from ..export.xlsx_export import export_xlsx
 from ..models import AuditLog, CertResult, Service, NotificationLog, Setting, Scan
 from ..services import import_targets, run_scan, recompute_latest
+from ..notify.service import send_test
 
 app = FastAPI(title="Certificate Radar")
 
@@ -61,6 +62,9 @@ def audit_page():
 @app.get("/notifications", response_class=HTMLResponse)
 def notifications():
     db=session(); logs=list(db.exec(select(NotificationLog).order_by(NotificationLog.id.desc()).limit(500))); db.close(); return "<h1>Уведомления</h1><pre>"+"\n".join(f"{x.sent_at} {x.channel} threshold={x.threshold} {x.message}" for x in logs)+"</pre>"
+
+@app.post("/api/notifications/test")
+def notification_test(): return send_test()
 
 @app.get("/settings", response_class=HTMLResponse)
 def settings_page():
