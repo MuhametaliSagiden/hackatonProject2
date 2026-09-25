@@ -5,3 +5,4 @@ lab/certs/
 exports/
 __pycache__/
 .pytest_cache/
+.run/
